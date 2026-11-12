@@ -5,6 +5,7 @@ import {api, type ClaudeSettings} from './api';
 import {useDerived} from './context';
 import {Icon} from './icons';
 import {JobsPanel, saveThenStart} from './Panels';
+import {HelpLink} from './Help';
 
 const DRAFT_KEY = 'autoshort.feedbackDraft.';
 const EXAMPLES = [
@@ -69,7 +70,7 @@ export const ClaudePanel: React.FC = () => {
 
 	return (
 		<div className="claude-panel">
-			<h3>Feedback to Claude</h3>
+			<h3>Feedback to Claude <HelpLink to="claude" /></h3>
 			<p className="muted small">
 				Say what to change in this edit. Claude Code revises the current edit (your manual changes included) and keeps the rest. The result arrives as a
 				draft at the top: accept it, keeping or not the current version in History, or discard it.

@@ -4,6 +4,7 @@ import type {EdlSegment} from '../edl/types';
 import {fmtTime, player, useDerived} from './context';
 import {editor, useEditor, type Selection} from './editorStore';
 import {Icon} from './icons';
+import {HelpLink} from './Help';
 import {moveEvent, moveSfx, type EventKind} from './ops';
 
 type Bar = {
@@ -108,6 +109,7 @@ export const Timeline: React.FC = () => {
 				<label className="small">
 					Zoom <input type="range" min={8} max={160} value={pps} onChange={(e) => setPps(Number(e.target.value))} />
 				</label>
+				<HelpLink to="timeline" />
 				<span className="muted small">Click or drag the ruler / the playhead to move in time · drag bars to move · drag their edges to resize · red ticks are cuts</span>
 			</div>
 			<div className="timeline-scroll" ref={scroller}>

@@ -8,6 +8,7 @@ import {api} from './api';
 import {useDerived} from './context';
 import {editor, useEditor} from './editorStore';
 import * as ops from './ops';
+import {HelpLink} from './Help';
 
 const apply = editor.apply.bind(editor);
 
@@ -387,6 +388,7 @@ export const StylesPanel: React.FC = () => {
 						{LABELS[k].title}
 					</button>
 				))}
+				<HelpLink to="styles" />
 			</nav>
 			<p className="muted small">{LABELS[target].hint}</p>
 			<div className="row">

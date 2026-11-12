@@ -483,3 +483,37 @@ code { background: var(--panel2); padding: 0 4px; border-radius: 4px; font-size:
 
 /* diagram element label: a small textarea (Enter = new line) */
 .label-input { resize: vertical; font: inherit; min-height: 32px; }
+
+/* help page */
+.help .lead { margin-bottom: 18px; }
+.help-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; }
+.help-toc { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 32px); overflow: auto; }
+.help-toc a { padding: 6px 10px; border-radius: 8px; color: var(--muted); font-size: 13px; }
+.help-toc a:hover { background: var(--hover); color: var(--text); text-decoration: none; }
+.help-toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.help-search { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--input); color: var(--muted); }
+.help-search input { border: none; background: transparent; padding: 7px 0; flex: 1; min-width: 0; }
+.help-search input:focus { box-shadow: none; }
+.help-content { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.help-section { scroll-margin-top: 16px; line-height: 1.6; }
+.help-section h2 { margin: 0 0 8px; font-size: 17px; }
+.help-section p { margin: 6px 0; }
+.help-section ul, .help-section ol { margin: 6px 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.help-section a { color: var(--accent); }
+kbd { font: 600 11.5px ui-monospace, 'Cascadia Code', Consolas, monospace; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; background: var(--panel2); white-space: nowrap; }
+.shortcuts { border-collapse: collapse; width: 100%; }
+.shortcuts td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.shortcuts td:first-child { white-space: nowrap; width: 1%; }
+.help-link { display: inline-flex; vertical-align: middle; color: var(--muted); margin-left: 4px; }
+.help-link:hover { color: var(--accent); }
+.subtabs .help-link { align-self: center; margin-left: 2px; }
+@media (max-width: 760px) {
+	.help-layout { grid-template-columns: 1fr; }
+	.help-toc { position: static; max-height: none; flex-direction: row; flex-wrap: wrap; gap: 4px; }
+	.help-toc .help-search { flex-basis: 100%; }
+	.help-toc a { background: var(--panel); border: 1px solid var(--line); padding: 4px 10px; font-size: 12px; }
+}
+
+/* an icon link (help) looks like the icon buttons next to it */
+a.icon-btn { border-color: transparent; background: transparent; color: var(--muted); }
+a.icon-btn:hover { color: var(--text); background: var(--hover); }

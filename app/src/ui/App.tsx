@@ -6,6 +6,7 @@ import {Editor} from './Editor';
 import {Icon} from './icons';
 import {SocialLinks} from './links';
 import {SettingsPage} from './Settings';
+import {HelpPage} from './Help';
 
 const slugFromHash = () => decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
 
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
 	// "~" never appears in a short's slug: the brand kit page cannot collide with a short.
 	if (slug === '~brand-kit') return <BrandKitPage />;
 	if (slug === '~settings') return <SettingsPage />;
+	if (slug === '~help' || slug.startsWith('~help/')) return <HelpPage section={slug.split('/')[1]} />;
 	return slug ? <Editor key={slug} slug={slug} /> : <VideoList />;
 };
 
@@ -66,6 +68,10 @@ const VideoList: React.FC = () => {
 				<a className="button" href="#/~brand-kit" title="Subscribe reminder, sound effects, fonts: make AutoShort yours">
 					<Icon name="palette" />
 					Brand kit
+				</a>
+				<a className="button" href="#/~help" title="Help: a guide to every feature">
+					<Icon name="help" />
+					<span className="btn-label">Help</span>
 				</a>
 				<a className="button" href="#/~settings" title="Settings: connect Claude Code (your subscription or an API key)">
 					<Icon name="settings" />

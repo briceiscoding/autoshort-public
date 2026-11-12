@@ -10,6 +10,7 @@ import * as ops from './ops';
 import {FileDrop} from './FileDrop';
 import {Icon, type IconName} from './icons';
 import {FreeLinks} from './links';
+import {HelpLink} from './Help';
 
 /* ---------------- checks ---------------- */
 
@@ -100,7 +101,8 @@ export const TranscriptPanel: React.FC = () => {
 	return (
 		<div className="transcript">
 			<p className="muted small">
-				Click a word to edit it (text, highlight, block start). Shift+click selects a range to cut or turn into a concept. Struck words are cut.
+				Click a word to edit it (text, highlight, block start). Shift+click selects a range to cut or turn into a concept. Struck words are cut.{' '}
+				<HelpLink to="soustitres" />
 			</p>
 			<div className="row">
 				<button
@@ -177,7 +179,7 @@ export const CatalogPanel: React.FC = () => {
 	};
 	return (
 		<div className="catalog">
-			<h4>Assets of this short <span className="muted small">(added at the playhead)</span></h4>
+			<h4>Assets of this short <HelpLink to="images" /> <span className="muted small">(added at the playhead)</span></h4>
 			<FileDrop
 				slug={slug}
 				kind="assets"
@@ -219,13 +221,13 @@ export const CatalogPanel: React.FC = () => {
 				))}
 			</ul>
 			{preview ? <img className="asset-preview" src={`/media/${encodeURIComponent(slug)}/${preview.split('/').map(encodeURIComponent).join('/')}`} /> : null}
-			<h4>Diagram at playhead</h4>
+			<h4>Diagram at playhead <HelpLink to="schemas" /></h4>
 			<div className="row wrap">
 				{(Object.keys(TEMPLATE_INFO) as Diagram['template'][]).filter((t) => t !== 'custom').map((t) => (
 					<button key={t} className="small" onClick={() => editor.apply((p) => ops.addDiagram(p, t, ...span(3.5)))}>{TEMPLATE_INFO[t].label}</button>
 				))}
 			</div>
-			<h4>Concept at playhead</h4>
+			<h4>Concept at playhead <HelpLink to="concepts" /></h4>
 			<button className="small" onClick={() => editor.apply((p) => ops.addConcept(p, 'Concept', ...span(2)))}>+ Concept</button>
 			<h4>
 				SFX (library/sfx) at playhead{' '}

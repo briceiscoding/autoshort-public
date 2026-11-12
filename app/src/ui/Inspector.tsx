@@ -8,6 +8,7 @@ import {fmtTime, player, useDerived} from './context';
 import {editor, useEditor} from './editorStore';
 import * as ops from './ops';
 import {JobsPanel} from './Panels';
+import {HelpLink} from './Help';
 import {ConceptStyleSection, CutInFrameSection, StylesPanel} from './Styles';
 
 const ICON_LIST = iconNames();
@@ -118,7 +119,7 @@ export const Inspector: React.FC = () => {
 			if (!c) return <Overview />;
 			return (
 				<div className="inspector">
-					<h3>Concept</h3>
+					<h3>Concept <HelpLink to="concepts" /></h3>
 					<label className="field">
 						<span>Text (1 to 3 words, shown uppercase)</span>
 						<input value={c.text} onChange={(e) => apply((p) => ops.updateEvent(p, 'concept', c.id, {text: e.target.value}))} />
@@ -166,7 +167,7 @@ const Overview: React.FC = () => {
 	const cuts = plan.spans.filter((s) => !s.keep);
 	return (
 		<div className="inspector">
-			<h3>Nothing selected</h3>
+			<h3>Nothing selected <HelpLink to="apercu" /></h3>
 			<p className="muted small">Select a bar on the timeline, a word in the Transcript tab, or a check.</p>
 			<table className="kv">
 				<tbody>
@@ -249,7 +250,7 @@ const SpanInspector: React.FC<{id: string}> = ({id}) => {
 	const words = plan.words.filter((w) => w.start >= span.start - 0.03 && w.start < span.end - 0.005);
 	return (
 		<div className="inspector">
-			<h3>Kept segment <span className="muted small">rush {span.start.toFixed(2)}-{span.end.toFixed(2)} s</span></h3>
+			<h3>Kept segment <HelpLink to="coupes" /> <span className="muted small">rush {span.start.toFixed(2)}-{span.end.toFixed(2)} s</span></h3>
 			<p className="small">{words.map((w) => w.text).join(' ')}</p>
 			<Check label={`Zoom punch-in (x${useDerived().theme.zoom.scale})`} value={span.zoom} onChange={(v) => apply((p) => ops.updateSpan(p, id, {zoom: v}))} />
 			<Check label="Zoom SFX at its start" value={Boolean(span.zoomSfx)} onChange={(v) => apply((p) => ops.updateSpan(p, id, {zoomSfx: v || undefined}))} />
@@ -311,7 +312,7 @@ const LogoInspector: React.FC<{logo: Logo}> = ({logo}) => {
 	const set = (patch: Partial<Logo>) => apply((p) => ops.updateEvent<Logo>(p, 'logo', logo.id, patch));
 	return (
 		<div className="inspector">
-			<h3>Logo</h3>
+			<h3>Logo <HelpLink to="logos" /></h3>
 			<AssetSelect value={logo.asset} kinds={['image']} onChange={(asset) => set({asset})} />
 			<Range label="Size (height px)" value={logo.size ?? theme.logos.size} min={60} max={600} step={5} onChange={(size) => set({size})} />
 			<div className="row">
@@ -353,7 +354,7 @@ const CutInInspector: React.FC<{cutIn: CutIn}> = ({cutIn}) => {
 	const set = (patch: Partial<CutIn>) => apply((p) => ops.updateEvent<CutIn>(p, 'cutIn', cutIn.id, patch));
 	return (
 		<div className="inspector">
-			<h3>Asset cut-in</h3>
+			<h3>Asset cut-in <HelpLink to="images" /></h3>
 			<AssetSelect value={cutIn.asset} kinds={['image', 'video']} onChange={(a) => set({asset: a})} />
 			<label className="field">
 				<span>Display mode</span>
@@ -444,7 +445,7 @@ const DiagramInspector: React.FC<{diagram: Diagram}> = ({diagram}) => {
 	const customs = video.files.diagrams.map((f) => f.replace(/\.tsx$/, ''));
 	return (
 		<div className="inspector">
-			<h3>Diagram <span className="muted small">{diagram.id}</span></h3>
+			<h3>Diagram <HelpLink to="schemas" /> <span className="muted small">{diagram.id}</span></h3>
 			<label className="field">
 				<span>Template (layout is automatic, inside the safe zone)</span>
 				<select value={diagram.template} onChange={(e) => set({template: e.target.value as Diagram['template']})}>
@@ -550,7 +551,7 @@ const SfxInspector: React.FC<{id: string}> = ({id}) => {
 	const set = (patch: Partial<typeof s>) => apply((p) => ops.updateEvent(p, 'sfx', id, patch));
 	return (
 		<div className="inspector">
-			<h3>Manual SFX</h3>
+			<h3>Manual SFX <HelpLink to="sons" /></h3>
 			<label className="field">
 				<span>File (library/sfx)</span>
 				<select value={s.file} onChange={(e) => set({file: e.target.value})}>
@@ -574,7 +575,7 @@ const AutoSfxInspector: React.FC<{index: number}> = ({index}) => {
 	if (!s) return null;
 	return (
 		<div className="inspector">
-			<h3>Automatic SFX</h3>
+			<h3>Automatic SFX <HelpLink to="sons" /></h3>
 			<p>
 				<strong>{s.file}</strong> at {s.time.toFixed(2)} s — {s.reason}
 			</p>
@@ -593,7 +594,7 @@ const MusicInspector: React.FC = () => {
 	const music = plan.music;
 	return (
 		<div className="inspector">
-			<h3>Music</h3>
+			<h3>Music <HelpLink to="musique" /></h3>
 			{music ? (
 				<>
 					<AssetSelect value={music.asset} kinds={['audio']} onChange={(asset) => apply((p) => ({...p, music: {...p.music!, asset}}))} />
@@ -616,7 +617,7 @@ const SubscribeInspector: React.FC = () => {
 	const set = (patch: Partial<typeof sub>) => apply((p) => ({...p, subscribe: {...p.subscribe!, ...patch}}));
 	return (
 		<div className="inspector">
-			<h3>Subscribe overlay</h3>
+			<h3>Subscribe overlay <HelpLink to="cta" /></h3>
 			<Num label="Start (s, output)" value={rushToOutput(segments, sub.start)} onChange={(v) => v !== undefined && set({start: round3(outputToRush(segments, v))})} />
 			<div className="row">
 				<Num label="Scale" value={sub.scale} step={0.01} onChange={(v) => v && set({scale: v})} />

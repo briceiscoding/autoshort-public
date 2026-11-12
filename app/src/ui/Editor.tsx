@@ -231,6 +231,9 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 					<button className={errors ? 'lint-btn err' : warns ? 'lint-btn warn' : 'lint-btn'} onClick={() => setTab('lint')}>
 						{errors} errors · {warns} warnings
 					</button>
+					<a className="button icon-btn" href="#/~help" target="_blank" rel="noopener" title="Help: a guide to every feature (new window)" aria-label="Help">
+						<Icon name="help" />
+					</a>
 					<ColorModeToggle />
 					<button className="primary" onClick={() => setTab('jobs')}>
 						<Icon name="download" />

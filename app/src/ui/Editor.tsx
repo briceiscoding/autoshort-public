@@ -13,6 +13,7 @@ import {FreeLinks, SocialLinks} from './links';
 import {DerivedContext, fmtTime, player, type Derived} from './context';
 import {FileDrop} from './FileDrop';
 import {editor, useEditor} from './editorStore';
+import {removeEvent, type EventKind} from './ops';
 import {Inspector} from './Inspector';
 import {ClaudePanel} from './Claude';
 import {CatalogPanel, HistoryPanel, JobsPanel, LintPanel, TranscriptPanel} from './Panels';
@@ -38,6 +39,9 @@ const loadCustomDiagrams = async (slug: string, files: string[]) => {
 	}
 	registerCustomDiagrams(entries);
 };
+
+// What the Delete / Backspace key removes from the edit (the selection of the timeline or the preview).
+const DELETABLE = new Set(['concept', 'logo', 'cutIn', 'gauge', 'diagram', 'sfx']);
 
 type Tab = 'inspector' | 'styles' | 'claude' | 'lint' | 'transcript' | 'catalog' | 'jobs' | 'history';
 
@@ -108,7 +112,14 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 			if (typing) return;
 			const key = e.key.toLowerCase();
 			const shortcut =
-				key === ' ' || key === 'arrowleft' || key === 'arrowright' || key === 'home' || key === 'end' || ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'y'));
+				key === ' ' ||
+				key === 'arrowleft' ||
+				key === 'arrowright' ||
+				key === 'home' ||
+				key === 'end' ||
+				key === 'delete' ||
+				key === 'backspace' ||
+				((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'y'));
 			if (!shortcut) return;
 			// The last clicked button or checkbox keeps the focus; a key press would make the browser draw its
 			// keyboard focus ring on it (and Space would press it again). Shortcuts are not aimed at it: drop it.
@@ -122,6 +133,14 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 			} else if (e.key === ' ') {
 				e.preventDefault();
 				player.toggle();
+			} else if (e.key === 'Delete' || e.key === 'Backspace') {
+				// Remove the selected picture, logo, concept, diagram, gauge or added sound (undoable).
+				e.preventDefault();
+				const sel = editor.get().selection;
+				if (sel && 'id' in sel && DELETABLE.has(sel.kind)) {
+					editor.apply((p) => removeEvent(p, sel.kind as EventKind, sel.id));
+					editor.select(null);
+				}
 			} else if (e.key === 'Home' || e.key === 'End') {
 				e.preventDefault();
 				player.seek(e.key === 'Home' ? 0 : player.duration());
@@ -241,7 +260,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 				<Timeline />
 				<footer className="statusbar muted small">
 					<span className="grow" style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
-						Space play/pause · ←/→ frame (Shift: 1 s) · Home / End · Ctrl+Z / Ctrl+Y · playhead {fmtTime(editor.get().time)}
+						Space play/pause · ←/→ frame (Shift: 1 s) · Home / End · Delete removes the selection · Ctrl+Z / Ctrl+Y · playhead {fmtTime(editor.get().time)}
 					</span>
 					<SocialLinks size={14} />
 				</footer>

@@ -69,6 +69,7 @@ class Logo(Timed):
     sfx: Optional[bool] = None
     enter: Optional[Literal["pop", "top", "bottom", "left", "right"]] = None
     shake: Optional[float] = None
+    rotate: Optional[float] = Field(default=None, ge=-360, le=360)
 
 
 class CutIn(Timed):
@@ -79,6 +80,7 @@ class CutIn(Timed):
     dim: Optional[float] = Field(default=None, ge=0, le=1)
     shake: Optional[float] = None
     enter: Optional[Literal["pop", "top", "bottom", "left", "right"]] = None
+    rotate: Optional[float] = Field(default=None, ge=-360, le=360)
     x: Optional[float] = None
     y: Optional[float] = None
     width: Optional[float] = None

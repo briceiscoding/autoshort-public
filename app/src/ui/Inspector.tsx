@@ -317,7 +317,7 @@ const LogoInspector: React.FC<{logo: Logo}> = ({logo}) => {
 			<div className="row">
 				<Num label="Centre x" value={logo.x} placeholder={String(theme.logos.centerX)} step={1} onChange={(x) => set({x})} />
 				<Num label="Centre y" value={logo.y} placeholder={String(theme.logos.centerY)} step={1} onChange={(y) => set({y})} />
-				<button className="small" onClick={() => set({x: undefined, y: undefined, size: undefined})}>Reset</button>
+				<button className="small" onClick={() => set({x: undefined, y: undefined, size: undefined, rotate: undefined})}>Reset</button>
 			</div>
 			<label className="field">
 				<span>Background removal (on a copy)</span>
@@ -338,9 +338,10 @@ const LogoInspector: React.FC<{logo: Logo}> = ({logo}) => {
 				</select>
 			</label>
 			<Range label="Shake (px)" value={logo.shake ?? 0} min={0} max={20} step={1} onChange={(v) => set({shake: v || undefined})} />
+			<Range label="Rotation (°)" value={logo.rotate ?? 0} min={-180} max={180} step={1} onChange={(v) => set({rotate: v || undefined})} />
 			<Check label="Bloop SFX" value={logo.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<TimeFields kind="logo" id={logo.id} start={logo.start} end={logo.end} />
-			<p className="muted small">Drag the logo on the preview to move it, drag its corner to resize.</p>
+			<p className="muted small">Drag the logo on the preview to move it, its corner to resize, the round handle to turn it. Delete or Backspace removes it.</p>
 			<Delete kind="logo" id={logo.id} />
 		</div>
 	);
@@ -375,15 +376,16 @@ const CutInInspector: React.FC<{cutIn: CutIn}> = ({cutIn}) => {
 				</select>
 			</label>
 			<Range label="Shake (px)" value={cutIn.shake ?? 0} min={0} max={20} step={1} onChange={(v) => set({shake: v || undefined})} />
+			<Range label="Rotation (°)" value={cutIn.rotate ?? 0} min={-180} max={180} step={1} onChange={(v) => set({rotate: v || undefined})} />
 			<Range label="Dark veil" value={cutIn.dim ?? 0} min={0} max={0.8} step={0.05} onChange={(v) => set({dim: v || undefined})} />
 			{cutIn.mode === 'full' ? <Range label="Zoom" value={cutIn.zoom ?? 1} min={0.3} max={4} step={0.01} onChange={(v) => set({zoom: v === 1 ? undefined : v})} /> : null}
 			{asset?.kind === 'video' ? <Num label="Skip first seconds of the video" value={cutIn.trim} min={0} onChange={(v) => set({trim: v})} /> : null}
-			<p className="muted small">On the preview: drag the picture to move it, its corner or the mouse wheel to {cutIn.mode === 'full' ? 'zoom' : 'resize'}.</p>
+			<p className="muted small">On the preview: drag the picture to move it, its corner or the mouse wheel to {cutIn.mode === 'full' ? 'zoom' : 'resize'}, the round handle to turn it. Delete or Backspace removes it.</p>
 			<div className="row">
 				<Num label="Centre x" value={cutIn.x} step={1} onChange={(x) => set({x})} />
 				<Num label="Centre y" value={cutIn.y} step={1} onChange={(y) => set({y})} />
 				{cutIn.mode !== 'full' ? <Num label="Width" value={cutIn.width} step={1} onChange={(width) => set({width})} /> : null}
-				<button className="small" onClick={() => set({x: undefined, y: undefined, width: undefined, zoom: undefined})}>Reset</button>
+				<button className="small" onClick={() => set({x: undefined, y: undefined, width: undefined, zoom: undefined, rotate: undefined})}>Reset</button>
 			</div>
 			<CutInFrameSection cutIn={cutIn} />
 			<Check label="Bloop SFX on entry" value={cutIn.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />

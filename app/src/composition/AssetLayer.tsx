@@ -4,7 +4,7 @@ import {AbsoluteFill, Easing, Img, OffthreadVideo, interpolate, useCurrentFrame,
 import type {EdlAsset, EdlLogo} from '../edl/types';
 import {frameCss} from '../model/theme';
 import {useTheme, useVideoUrl} from './context';
-import {bgRect, logoRect, screenRect} from './geometry';
+import {bgRect, fullRect, logoRect, screenRect} from './geometry';
 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 const easeOut = Easing.out(Easing.cubic);
@@ -79,7 +79,7 @@ export const CutInLayer: React.FC<{asset: EdlAsset}> = ({asset}) => {
 						width: rect.w,
 						left: rect.x,
 						top: asset.y ?? 650,
-						transform: `translateY(calc(-50% + ${(1 - fade) * 40}px))`,
+						transform: `translateY(calc(-50% + ${(1 - fade) * 40}px))${asset.rotate ? ` rotate(${asset.rotate}deg)` : ''}`,
 						opacity: fade * exit,
 					}}
 				/>
@@ -100,7 +100,7 @@ export const CutInLayer: React.FC<{asset: EdlAsset}> = ({asset}) => {
 			width: rect.w,
 			height: asset.aspect ? rect.h : undefined,
 			maxWidth: 'none',
-			transform: `translateY(-50%) ${enter ? '' : `scale(${0.9 + 0.1 * fade}) `}${floatTransform(time)}`,
+			transform: `translateY(-50%) ${enter ? '' : `scale(${0.9 + 0.1 * fade}) `}${asset.rotate ? `rotate(${asset.rotate}deg) ` : ''}${floatTransform(time)}`,
 			opacity: enter ? 1 : fade,
 			objectFit: 'cover',
 		};
@@ -115,14 +115,17 @@ export const CutInLayer: React.FC<{asset: EdlAsset}> = ({asset}) => {
 
 	const cover: React.CSSProperties = {width: '100%', height: '100%', objectFit: 'cover'};
 	const shake = asset.shake ?? 0;
+	const full = fullRect(asset, frameW, frameH);
 	const move = `translate(${(asset.x ?? frameW / 2) - frameW / 2}px, ${(asset.y ?? frameH / 2) - frameH / 2}px) `;
 	return (
 		<AbsoluteFill style={{overflow: 'hidden', ...enterMotion(enter, time, {x: frameW / 2, y: frameH / 2}, size)}}>
 			<AbsoluteFill style={{backgroundColor: '#000'}} />
-			<AbsoluteFill
-				style={{transform: `${move}scale(${asset.zoom ?? 1})${shake > 0 ? ` ${shakeTransform(time, shake)}` : ''}`, transformOrigin: 'center bottom'}}
-			>
-				{asset.video ? <OffthreadVideo src={src} muted trimBefore={trimFrames} style={cover} /> : <Img src={src} style={cover} />}
+			<AbsoluteFill style={asset.rotate ? {transform: `rotate(${asset.rotate}deg)`, transformOrigin: `${full.x + full.w / 2}px ${full.y + full.h / 2}px`} : undefined}>
+				<AbsoluteFill
+					style={{transform: `${move}scale(${asset.zoom ?? 1})${shake > 0 ? ` ${shakeTransform(time, shake)}` : ''}`, transformOrigin: 'center bottom'}}
+				>
+					{asset.video ? <OffthreadVideo src={src} muted trimBefore={trimFrames} style={cover} /> : <Img src={src} style={cover} />}
+				</AbsoluteFill>
 			</AbsoluteFill>
 			{asset.dim ? <AbsoluteFill style={{backgroundColor: `rgba(0,0,0,${asset.dim})`}} /> : null}
 		</AbsoluteFill>
@@ -157,7 +160,7 @@ export const LogoLayer: React.FC<{logo: EdlLogo}> = ({logo}) => {
 				width: rect.w,
 				height: rect.h,
 				overflow: 'hidden',
-				transform: `${motion.transform === 'none' ? '' : `${motion.transform} `}scale(${scale}) ${shake > 0 ? shakeTransform(time, shake) : floatTransform(time, 1.1)}`,
+				transform: `${motion.transform === 'none' ? '' : `${motion.transform} `}scale(${scale})${logo.rotate ? ` rotate(${logo.rotate}deg)` : ''} ${shake > 0 ? shakeTransform(time, shake) : floatTransform(time, 1.1)}`,
 				opacity,
 			}}
 		>

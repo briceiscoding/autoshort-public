@@ -94,6 +94,8 @@ export const LogoSchema = z
 		// Entrance (absent or pop = the default pop) and trembling strength in px, like pictures.
 		enter: z.enum(['pop', 'top', 'bottom', 'left', 'right']).optional(),
 		shake: z.number().min(0).optional(),
+		// Rotation in degrees (clockwise), around the logo's centre.
+		rotate: z.number().min(-360).max(360).optional(),
 	})
 	.strict();
 
@@ -112,6 +114,8 @@ export const CutInSchema = z
 		// Extra scale of a full asset, from its bottom edge.
 		zoom: z.number().positive().optional(),
 		enter: CutInEnter.optional(),
+		// Rotation in degrees (clockwise), around the picture's centre.
+		rotate: z.number().min(-360).max(360).optional(),
 		// Opacity of the dark veil (0..1).
 		dim: z.number().min(0).max(1).optional(),
 		// Trembling strength in px; 0 or absent = still.

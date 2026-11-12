@@ -108,6 +108,7 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 			process: l.process ?? null,
 			...(l.enter !== undefined ? {enter: l.enter} : {}),
 			...(l.shake !== undefined ? {shake: l.shake} : {}),
+			...(l.rotate ? {rotate: l.rotate} : {}),
 		};
 	});
 
@@ -147,6 +148,7 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 			...(c.dim !== undefined ? {dim: c.dim} : {}),
 			...(c.shake !== undefined ? {shake: c.shake} : {}),
 			...(c.enter !== undefined ? {enter: c.enter} : {}),
+			...(c.rotate ? {rotate: c.rotate} : {}),
 			...(asset?.width && asset?.height ? {aspect: round3(asset.width / asset.height)} : {}),
 			...(c.x !== undefined ? {x: c.x} : {}),
 			...(c.y !== undefined ? {y: c.y} : {}),

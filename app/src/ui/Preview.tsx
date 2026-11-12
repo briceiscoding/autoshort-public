@@ -133,6 +133,19 @@ type Draggable = {
 	text: boolean;
 	// Plan change for a move (dx, dy) or a resize (dx, dy) from the gesture start, in canvas px.
 	patch: (mode: 'move' | 'resize', dx: number, dy: number) => (plan: Plan) => Plan;
+	// Pictures and logos turn: current angle (degrees) and the plan change for a new one.
+	rotation?: {angle: number; patch: (angle: number) => (plan: Plan) => Plan};
+};
+
+// Angle written to the plan: within -180..180, snapped to the right angles nearby (to 15 degree steps with Shift).
+const snapAngle = (deg: number, fine: boolean): number => {
+	let a = ((((deg + 180) % 360) + 360) % 360) - 180;
+	if (fine) a = Math.round(a / 15) * 15;
+	else {
+		const right = Math.round(a / 90) * 90;
+		if (Math.abs(a - right) < 4) a = right;
+	}
+	return a === -180 ? 180 : Math.round(a * 10) / 10;
 };
 
 const useDraggable = (): Draggable | null => {
@@ -153,6 +166,7 @@ const useDraggable = (): Draggable | null => {
 			text: false,
 			patch: (mode, dx, dy) => (p) =>
 				updateEvent<Logo>(p, 'logo', logo.id, mode === 'move' ? {x: round3(cx + dx), y: round3(cy + dy)} : {size: Math.max(40, Math.round(rect.h + dy * 2))}),
+			rotation: {angle: logo.rotate ?? 0, patch: (angle) => (p) => updateEvent<Logo>(p, 'logo', logo.id, {rotate: angle || undefined})},
 		};
 	}
 	if (selection?.kind === 'cutIn') {
@@ -174,6 +188,7 @@ const useDraggable = (): Draggable | null => {
 						asset.id,
 						mode === 'move' ? {x: round3(x0 + dx), y: round3(y0 + dy)} : {zoom: round3(Math.min(4, Math.max(0.3, (z0 * (rect.w + dx * 2)) / rect.w)))},
 					),
+				rotation: {angle: asset.rotate ?? 0, patch: (angle) => (p) => updateEvent<CutIn>(p, 'cutIn', asset.id, {rotate: angle || undefined})},
 			};
 		}
 		const rect = asset.mode === 'bg' ? bgRect(asset) : screenRect(asset, theme);
@@ -183,6 +198,7 @@ const useDraggable = (): Draggable | null => {
 			text: false,
 			patch: (mode, dx, dy) => (p) =>
 				updateEvent<CutIn>(p, 'cutIn', asset.id, mode === 'move' ? {x: round3(cx + dx), y: round3(cy + dy)} : {width: Math.max(120, Math.round(rect.w + dx * 2))}),
+			rotation: {angle: asset.rotate ?? 0, patch: (angle) => (p) => updateEvent<CutIn>(p, 'cutIn', asset.id, {rotate: angle || undefined})},
 		};
 	}
 	if (selection?.kind === 'concept') {
@@ -238,7 +254,7 @@ const SNAP_SCREEN_PX = 8;
 const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 	const {edl} = useDerived();
 	const draggable = useDraggable();
-	const drag = useRef<{mode: 'move' | 'resize'; x: number; y: number; target: Draggable} | null>(null);
+	const drag = useRef<{mode: 'move' | 'resize' | 'rotate'; x: number; y: number; target: Draggable; cx: number; cy: number} | null>(null);
 	// Mouse wheel over the selected item resizes it; one undo step per burst of wheel ticks.
 	const wheel = useRef<{target: Draggable; dx: number; timer: number} | null>(null);
 	// Native listener: React's wheel listener is passive and could not stop the page from scrolling.
@@ -257,15 +273,22 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 	const {rect} = draggable;
 	const canvas = {width: edl.width, height: edl.height};
 
-	const onDown = (mode: 'move' | 'resize') => (e: React.PointerEvent) => {
+	const onDown = (mode: 'move' | 'resize' | 'rotate') => (e: React.PointerEvent) => {
 		e.stopPropagation();
 		(e.target as HTMLElement).setPointerCapture(e.pointerId);
-		drag.current = {mode, x: e.clientX, y: e.clientY, target: draggable};
+		// Rotation turns around the centre of the item (a rotated box keeps its centre on screen).
+		const r = box.current?.getBoundingClientRect();
+		drag.current = {mode, x: e.clientX, y: e.clientY, target: draggable, cx: r ? r.left + r.width / 2 : 0, cy: r ? r.top + r.height / 2 : 0};
 		editor.beginGesture();
 	};
 	const onMove = (e: React.PointerEvent) => {
 		const d = drag.current;
 		if (!d) return;
+		if (d.mode === 'rotate') {
+			const deg = (Math.atan2(e.clientY - d.cy, e.clientX - d.cx) * 180) / Math.PI + 90;
+			if (d.target.rotation) editor.applyLive(d.target.rotation.patch(snapAngle(deg, e.shiftKey)));
+			return;
+		}
 		let dx = (e.clientX - d.x) / scale;
 		let dy = (e.clientY - d.y) / scale;
 		if (d.mode === 'move') {
@@ -300,7 +323,13 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 			{guides.horizontal ? <div className="snap-guide horizontal" style={{top: (canvas.height / 2) * scale}} /> : null}
 			<div
 				className={`drag-box${draggable.text ? ' text' : ''}`}
-				style={{left: rect.x * scale, top: rect.y * scale, width: rect.w * scale, height: rect.h * scale}}
+				style={{
+					left: rect.x * scale,
+					top: rect.y * scale,
+					width: rect.w * scale,
+					height: rect.h * scale,
+					transform: draggable.rotation?.angle ? `rotate(${draggable.rotation.angle}deg)` : undefined,
+				}}
 				onPointerDown={onDown('move')}
 				onPointerMove={onMove}
 				onPointerUp={onUp}
@@ -308,6 +337,15 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 				title="Drag to move (sticks to the centre lines), wheel or corner to resize"
 			>
 				<div className="drag-resize" onPointerDown={onDown('resize')} onPointerMove={onMove} onPointerUp={onUp} title="Drag to resize" />
+				{draggable.rotation ? (
+					<div
+						className="drag-rotate"
+						onPointerDown={onDown('rotate')}
+						onPointerMove={onMove}
+						onPointerUp={onUp}
+						title={`Drag to turn (${draggable.rotation.angle}°): sticks to right angles, Shift = 15° steps`}
+					/>
+				) : null}
 			</div>
 		</>
 	);

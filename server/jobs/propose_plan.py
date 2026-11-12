@@ -201,7 +201,7 @@ def auto_cuts(theme: dict, plan: dict | None = None) -> bool:
     return bool(saved) if saved is not None else bool(theme.get("editing", {}).get("autoCuts", False))
 
 
-CUT_IN_HAND_SET = ("x", "y", "width", "zoom", "frame", "trim", "sfx")
+CUT_IN_HAND_SET = ("x", "y", "width", "zoom", "rotate", "frame", "trim", "sfx")
 
 
 def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
@@ -274,7 +274,7 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
     for new in plan["logos"]:
         old = next((o for o in old_logos if o["asset"] == new["asset"]), None)
         if old:
-            new.update({k: old[k] for k in ("x", "y", "size", "process", "sfx", "enter", "shake") if k in old and k not in new})
+            new.update({k: old[k] for k in ("x", "y", "size", "rotate", "process", "sfx", "enter", "shake") if k in old and k not in new})
     diagrams = []
     for i, d in enumerate(p["diagrams"]):
         a, b = get(d["fromWord"]), get(d["toWord"])

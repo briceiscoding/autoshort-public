@@ -46,6 +46,7 @@ export type EdlLogo = {
 	process?: 'luma_key' | 'rembg' | null;
 	enter?: 'pop' | 'top' | 'bottom' | 'left' | 'right';
 	shake?: number;
+	rotate?: number;
 };
 
 export type EdlAsset = {
@@ -60,6 +61,7 @@ export type EdlAsset = {
 	dim?: number;
 	shake?: number;
 	enter?: 'pop' | 'top' | 'bottom' | 'left' | 'right';
+	rotate?: number;
 	aspect?: number;
 	x?: number;
 	y?: number;

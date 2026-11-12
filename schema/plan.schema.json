@@ -511,6 +511,11 @@
           "shake": {
             "type": "number",
             "minimum": 0
+          },
+          "rotate": {
+            "type": "number",
+            "minimum": -360,
+            "maximum": 360
           }
         },
         "required": [
@@ -571,6 +576,11 @@
               "left",
               "right"
             ]
+          },
+          "rotate": {
+            "type": "number",
+            "minimum": -360,
+            "maximum": 360
           },
           "dim": {
             "type": "number",

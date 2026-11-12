@@ -3,7 +3,7 @@
 import React from 'react';
 import {Easing, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {EdlCaptionBlock, EdlCaptionWord, EdlConcept} from '../edl/types';
-import {backgroundCss, canvasFont, textCss, type TextStyle, type Theme} from '../model/theme';
+import {backgroundCss, canvasFont, textCss, type TextStyle, type Theme, withQuotes} from '../model/theme';
 import {useTheme} from './context';
 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
@@ -24,11 +24,15 @@ export const measureStyled = (text: string, style: TextStyle, size = style.size)
 	return measureText(shown, canvasFont(style, size)) + style.letterSpacing * shown.length;
 };
 
-const wordStyle = (word: EdlCaptionWord, theme: Theme): TextStyle => (word.highlight ? theme.textStyles.highlight : theme.textStyles.caption);
+// A call-to-action word has its own style (quotes included), above the highlight style.
+const wordStyle = (word: EdlCaptionWord, theme: Theme): TextStyle =>
+	word.keyword ? theme.textStyles.keyword : word.highlight ? theme.textStyles.highlight : theme.textStyles.caption;
+const styled = (word: EdlCaptionWord) => word.keyword || word.highlight;
+export const wordText = (word: EdlCaptionWord, theme: Theme): string => (word.keyword ? withQuotes(word.text, theme.textStyles.keyword) : word.text);
 
 const wordWidth = (word: EdlCaptionWord, theme: Theme): number => {
 	const style = wordStyle(word, theme);
-	return measureStyled(word.text, style) + (word.highlight && style.background ? 2 * style.background.padX : 0);
+	return measureStyled(wordText(word, theme), style) + (styled(word) && style.background ? 2 * style.background.padX : 0);
 };
 
 // Lines are fixed from the resting widths, so a swelling word never makes the text re-wrap.
@@ -84,10 +88,18 @@ const Word: React.FC<{word: EdlCaptionWord; time: number; theme: Theme}> = ({wor
 	const pop = theme.captions.popS;
 	if (!word.highlight) {
 		const scale = interpolate(t, [0, pop * 0.6, pop], [0.7, 1.1, 1], {...clamp, easing: easeOut});
+		if (word.keyword) {
+			const style = theme.textStyles.keyword;
+			return (
+				<span style={{display: 'inline-block', ...textCss(style), fontSize: style.size, ...backgroundCss(style), opacity, transform: `scale(${scale})`}}>
+					{wordText(word, theme)}
+				</span>
+			);
+		}
 		return <span style={{display: 'inline-block', opacity, transform: `scale(${scale})`}}>{word.text}</span>;
 	}
 	// Magnifier "blob": the word swells smoothly and pushes its neighbours, then settles back.
-	const style = theme.textStyles.highlight;
+	const style = wordStyle(word, theme);
 	const {blobTimes, blobScales} = theme.highlight;
 	const blob = interpolate(t, blobTimes, blobScales, {...clamp, easing: Easing.inOut(Easing.sin)});
 	const push = (Math.max(blob - 1, 0) * wordWidth(word, theme)) / 2;
@@ -103,7 +115,7 @@ const Word: React.FC<{word: EdlCaptionWord; time: number; theme: Theme}> = ({wor
 				transform: `scale(${blob})`,
 			}}
 		>
-			{word.text}
+			{wordText(word, theme)}
 		</span>
 	);
 };

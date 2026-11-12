@@ -218,6 +218,10 @@ const WordInspector: React.FC<{id: string}> = ({id}) => {
 			<Check label="Highlight (accent background, magnifier)" value={Boolean(word.highlight)} onChange={(v) => apply((p) => ops.updateWord(p, id, {highlight: v || undefined}))} />
 			<Check label="Starts a new caption block" value={Boolean(word.blockStart)} onChange={(v) => apply((p) => ops.updateWord(p, id, {blockStart: v || undefined}))} />
 			<div className="row">
+				<Check label="CTA word (the word to comment, its own style)" value={Boolean(word.keyword)} onChange={(v) => apply((p) => ops.updateWord(p, id, {keyword: v || undefined}))} />
+				<button className="small" onClick={() => editor.select({kind: 'textStyle', target: 'keyword'})}>Style</button>
+			</div>
+			<div className="row">
 				{kept ? (
 					<button onClick={() => apply((p) => ops.cutWords(p, id, id))}>Cut this word</button>
 				) : (

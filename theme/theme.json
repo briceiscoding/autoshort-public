@@ -88,6 +88,23 @@
       "x": 540,
       "y": 420,
       "maxWidth": 780
+    },
+    "keyword": {
+      "font": "fonts/Poppins-ExtraBold.ttf",
+      "size": 66,
+      "bold": false,
+      "italic": false,
+      "uppercase": true,
+      "letterSpacing": 0,
+      "lineHeight": 1.2,
+      "color": "#FF0855",
+      "stroke": null,
+      "shadow": null,
+      "background": null,
+      "x": 540,
+      "y": 1300,
+      "maxWidth": 780,
+      "quotes": "french"
     }
   },
   "safeZone": {
@@ -135,8 +152,28 @@
     "popS": 0.25
   },
   "frameStyles": {
-    "screen": {"radius": 24, "border": null, "shadow": {"x": 0, "y": 20, "blur": 40, "color": "#000000", "opacity": 0.35}},
-    "bg": {"radius": 24, "border": null, "shadow": {"x": 0, "y": 20, "blur": 40, "color": "#000000", "opacity": 0.35}}
+    "screen": {
+      "radius": 24,
+      "border": null,
+      "shadow": {
+        "x": 0,
+        "y": 20,
+        "blur": 40,
+        "color": "#000000",
+        "opacity": 0.35
+      }
+    },
+    "bg": {
+      "radius": 24,
+      "border": null,
+      "shadow": {
+        "x": 0,
+        "y": 20,
+        "blur": 40,
+        "color": "#000000",
+        "opacity": 0.35
+      }
+    }
   },
   "screen": {
     "maxWidth": 840,

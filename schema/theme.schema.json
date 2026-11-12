@@ -276,6 +276,13 @@
                 }
               ]
             },
+            "quotes": {
+              "type": "string",
+              "enum": [
+                "french",
+                "english"
+              ]
+            },
             "x": {
               "type": "number"
             },
@@ -447,6 +454,13 @@
                 {
                   "type": "null"
                 }
+              ]
+            },
+            "quotes": {
+              "type": "string",
+              "enum": [
+                "french",
+                "english"
               ]
             },
             "x": {
@@ -622,6 +636,193 @@
                 }
               ]
             },
+            "quotes": {
+              "type": "string",
+              "enum": [
+                "french",
+                "english"
+              ]
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "maxWidth": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "font",
+            "size",
+            "bold",
+            "italic",
+            "uppercase",
+            "letterSpacing",
+            "lineHeight",
+            "color",
+            "stroke",
+            "shadow",
+            "background",
+            "x",
+            "y",
+            "maxWidth"
+          ],
+          "additionalProperties": false
+        },
+        "keyword": {
+          "type": "object",
+          "properties": {
+            "font": {
+              "type": "string",
+              "minLength": 1
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bold": {
+              "type": "boolean"
+            },
+            "italic": {
+              "type": "boolean"
+            },
+            "uppercase": {
+              "type": "boolean"
+            },
+            "letterSpacing": {
+              "type": "number"
+            },
+            "lineHeight": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "stroke": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "width": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9A-Fa-f]{6}$"
+                    }
+                  },
+                  "required": [
+                    "width",
+                    "color"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "shadow": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "blur": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9A-Fa-f]{6}$"
+                    },
+                    "opacity": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "blur",
+                    "color",
+                    "opacity"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "background": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9A-Fa-f]{6}$"
+                    },
+                    "opacity": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "radius": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "padX": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "padY": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "borderWidth": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "borderColor": {
+                      "type": "string",
+                      "pattern": "^#[0-9A-Fa-f]{6}$"
+                    }
+                  },
+                  "required": [
+                    "color",
+                    "opacity",
+                    "radius",
+                    "padX",
+                    "padY"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "quotes": {
+              "type": "string",
+              "enum": [
+                "french",
+                "english"
+              ]
+            },
             "x": {
               "type": "number"
             },
@@ -655,7 +856,8 @@
       "required": [
         "caption",
         "highlight",
-        "concept"
+        "concept",
+        "keyword"
       ],
       "additionalProperties": false
     },

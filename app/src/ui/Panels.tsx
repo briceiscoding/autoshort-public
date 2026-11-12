@@ -144,7 +144,7 @@ export const TranscriptPanel: React.FC = () => {
 						<React.Fragment key={w.id}>
 							{w.blockStart ? <span className="block-break" /> : null}
 							<span
-								className={`word ${kept ? '' : 'cut'} ${w.highlight ? 'hl' : ''} ${lowConf ? 'low' : ''} ${selectedRange.has(w.id) ? 'selected' : ''} ${active ? 'active' : ''} ${w.original ? 'corrected' : ''}`}
+								className={`word ${kept ? '' : 'cut'} ${w.highlight ? 'hl' : ''} ${w.keyword ? 'kw' : ''} ${lowConf ? 'low' : ''} ${selectedRange.has(w.id) ? 'selected' : ''} ${active ? 'active' : ''} ${w.original ? 'corrected' : ''}`}
 								title={`${w.start.toFixed(2)}-${w.end.toFixed(2)} s${w.score != null ? ` · ${Math.round(w.score * 100)} %` : ''}${w.original ? ` · was "${w.original}"` : ''}`}
 								onClick={(e) => {
 									if (e.shiftKey && anchor) editor.select({kind: 'word', id: anchor, lastId: w.id});

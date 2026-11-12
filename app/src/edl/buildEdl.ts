@@ -41,7 +41,7 @@ const buildCaptions = (plan: Plan, segments: ReturnType<typeof keptSegments>, mi
 		inside.forEach((w, i) => {
 			if (i > 0 && w.blockStart) flush();
 			const toOut = (t: number) => round3(segment.outStart + Math.min(Math.max(t, segment.srcStart), segment.srcEnd) - segment.srcStart);
-			current.push({id: w.id, text: w.text, start: toOut(w.start), end: toOut(w.end), highlight: Boolean(w.highlight)});
+			current.push({id: w.id, text: w.text, start: toOut(w.start), end: toOut(w.end), highlight: Boolean(w.highlight), ...(w.keyword ? {keyword: true} : {})});
 		});
 		flush();
 	}

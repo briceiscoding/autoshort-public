@@ -19,6 +19,7 @@ const LABELS: Record<Target, {title: string; hint: string}> = {
 	caption: {title: 'Captions', hint: 'Every caption block. Drag the block on the preview to move all captions.'},
 	highlight: {title: 'Highlighted words', hint: 'Important words inside the captions: their background box, its corners and border (Transcript tab: select a word, Highlight).'},
 	concept: {title: 'Concepts', hint: 'Big words at the top. Drag one on the preview to move every concept.'},
+	keyword: {title: 'CTA word', hint: 'The word viewers must comment (e.g. MONTAGE): its own look inside the captions, quotes included (Transcript tab: select the word, CTA word).'},
 	screen: {title: 'Screen pictures', hint: 'Pictures and videos in "screen" mode (card over the blurred video): corners, border, shadow.'},
 	bg: {title: 'Behind-head pictures', hint: 'Pictures in "bg" mode (behind your head): corners, border, shadow.'},
 };
@@ -168,7 +169,7 @@ const DEFAULT_SHADOW = {x: 0, y: 6, blur: 14, color: '#000000', opacity: 0.5};
 const DEFAULT_BACKGROUND = {color: '#FF0855', opacity: 1, radius: 14, padX: 14, padY: 6};
 const DEFAULT_BORDER = {width: 6, color: '#FFFFFF', opacity: 1};
 
-export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStylePatch) => void; position?: boolean}> = ({style, onChange, position = true}) => {
+export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStylePatch) => void; position?: boolean; quotes?: boolean}> = ({style, onChange, position = true, quotes = false}) => {
 	const {stroke, shadow, background} = style;
 	return (
 		<div className="style-editor">
@@ -180,6 +181,16 @@ export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStyl
 				<Toggle label="UPPERCASE" value={style.uppercase} onChange={(uppercase) => onChange({uppercase})} />
 				<ColorField label="Colour" value={style.color} onChange={(color) => onChange({color})} />
 			</div>
+			{quotes ? (
+				<label className="field">
+					<span>Quotes</span>
+					<select value={style.quotes ?? ''} onChange={(e) => onChange({quotes: (e.target.value || undefined) as TextStyle['quotes']})}>
+						<option value="">None</option>
+						<option value="french">« MONTAGE »</option>
+						<option value="english">“MONTAGE”</option>
+					</select>
+				</label>
+			) : null}
 			<div className="row">
 				<Slider label="Letter spacing" value={style.letterSpacing} min={-10} max={40} unit="px" onChange={(letterSpacing) => onChange({letterSpacing})} />
 				<Slider label="Line height" value={style.lineHeight} min={0.7} max={2} step={0.05} onChange={(lineHeight) => onChange({lineHeight})} />
@@ -416,7 +427,7 @@ export const StylesPanel: React.FC = () => {
 			{isFrame(target) ? (
 				<FrameEditor frame={theme.frameStyles[target]} onChange={(patch) => apply((p) => ops.setVideoFrame(p, target, patch))} />
 			) : (
-				<StyleEditor style={theme.textStyles[target]} position={target !== 'highlight'} onChange={(patch) => apply((p) => ops.setVideoStyle(p, target, patch))} />
+				<StyleEditor style={theme.textStyles[target]} position={target !== 'highlight' && target !== 'keyword'} quotes={target === 'keyword'} onChange={(patch) => apply((p) => ops.setVideoStyle(p, target, patch))} />
 			)}
 		</div>
 	);

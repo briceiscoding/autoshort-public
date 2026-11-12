@@ -524,3 +524,4 @@ a.icon-btn:hover { color: var(--text); background: var(--hover); }
 .home > .home-footer { margin-top: auto; }
 .home > :nth-last-child(2) { margin-bottom: 36px; }
 .home > .video-grid { margin-top: 0; }
+.word.kw { color: var(--accent); font-weight: 700; text-transform: uppercase; }

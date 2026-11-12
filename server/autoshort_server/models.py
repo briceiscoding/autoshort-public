@@ -23,6 +23,7 @@ class Word(Strict):
     original: Optional[str] = None
     blockStart: Optional[bool] = None
     highlight: Optional[bool] = None
+    keyword: Optional[bool] = None
 
 
 class Span(Strict):

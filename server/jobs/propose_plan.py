@@ -28,6 +28,7 @@ PROPOSAL_SCHEMA = {
                                                            "reason": {"enum": ["hesitation", "repetition", "false-start", "outside", "manual"]}}}},
         "restores": {"type": "array", "items": {"type": "string"}, "description": "word ids of cut words to keep after all"},
         "highlights": {"type": "array", "items": {"type": "string"}},
+        "keywords": {"type": "array", "items": {"type": "string"}, "description": "word ids of the call-to-action keyword"},
         "blockStarts": {"type": "array", "items": {"type": "string"}},
         "corrections": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["word", "text"],
                                                    "properties": {"word": {"type": "string"}, "text": {"type": "string"}}}},
@@ -90,6 +91,7 @@ def plan_to_proposal(plan: dict) -> dict:
     return {
         "cuts": cuts,
         "highlights": [w["id"] for w in ordered if w.get("highlight")],
+        "keywords": [w["id"] for w in ordered if w.get("keyword")],
         "blockStarts": [w["id"] for w in ordered if w.get("blockStart")],
         "corrections": [{"word": w["id"], "text": w["text"]} for w in ordered if w.get("original")],
         "concepts": [{"text": c["text"], "fromWord": c.get("trigger") or at(c["start"]), "toWord": until(c["end"])}
@@ -157,6 +159,8 @@ architecture is clearer drawn; every element appears on its trigger word.
 Images: landscape pictures go in "screen" mode; "full" only for 9:16 pictures (use shake 6 and dim 0.3 for a hook picture).
 A picture may set enter: "pop" (bounce in place) or "top" / "bottom" / "left" / "right" (slides in from that edge); leave it
 out for the default entrance, and use it sparingly (a punchline, a reveal).
+keywords: when the author asks viewers to comment a word (« commente MONTAGE »), give that word's id (it gets its own
+style; correct its text if it was misheard). Usually none or one.
 Subscribe overlay only on a call to action sentence ("abonne-toi", "suivez-moi"...): give its first word id, else null.
 Every asset should find a moment; list the ones you could not place in unplacedAssets.
 
@@ -245,6 +249,11 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
         w.pop("highlight", None)
         if w["id"] in set(p["highlights"]):
             w["highlight"] = True
+    if "keywords" in p:
+        for w in plan["words"]:
+            w.pop("keyword", None)
+            if w["id"] in set(p["keywords"]):
+                w["keyword"] = True
     if p.get("blockStarts"):
         starts = set(p["blockStarts"])
         for w in plan["words"]:

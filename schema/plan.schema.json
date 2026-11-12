@@ -193,6 +193,9 @@
           },
           "highlight": {
             "type": "boolean"
+          },
+          "keyword": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -422,6 +425,13 @@
                   {
                     "type": "null"
                   }
+                ]
+              },
+              "quotes": {
+                "type": "string",
+                "enum": [
+                  "french",
+                  "english"
                 ]
               },
               "x": {

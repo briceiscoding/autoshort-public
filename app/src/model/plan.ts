@@ -24,6 +24,8 @@ export const WordSchema = z
 		blockStart: z.boolean().optional(),
 		// Highlighted word (accent background, magnifier).
 		highlight: z.boolean().optional(),
+		// The call-to-action word (e.g. MONTAGE in « commente MONTAGE »): drawn with the keyword text style.
+		keyword: z.boolean().optional(),
 	})
 	.strict();
 

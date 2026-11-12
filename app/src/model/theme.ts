@@ -36,7 +36,9 @@ export const TextStyleSchema = z
 			})
 			.strict()
 			.nullable(),
-		// Centre of the text on the 1080 x 1920 canvas and its maximum width (unused by the highlight style).
+		// Quotes drawn around the text: « » (french) or “ ” (english); absent = none.
+		quotes: z.enum(['french', 'english']).optional(),
+		// Centre of the text on the 1080 x 1920 canvas and its maximum width (unused by the highlight and keyword styles).
 		x: z.number(),
 		y: z.number(),
 		maxWidth: z.number().positive(),
@@ -62,7 +64,8 @@ export const FRAME_STYLE_KINDS = ['screen', 'bg'] as const;
 export type FrameStyleKind = (typeof FRAME_STYLE_KINDS)[number];
 export const TextStylePatchSchema = TextStyleSchema.partial();
 export type TextStylePatch = z.infer<typeof TextStylePatchSchema>;
-export const TEXT_STYLE_KINDS = ['caption', 'highlight', 'concept'] as const;
+// keyword: the call-to-action word inside the captions (e.g. MONTAGE in « commente MONTAGE »).
+export const TEXT_STYLE_KINDS = ['caption', 'highlight', 'concept', 'keyword'] as const;
 export type TextStyleKind = (typeof TEXT_STYLE_KINDS)[number];
 
 export const ThemeSchema = z
@@ -92,7 +95,7 @@ export const ThemeSchema = z
 				display: z.object({family: z.string(), file: z.string()}).strict(),
 			})
 			.strict(),
-		textStyles: z.object({caption: TextStyleSchema, highlight: TextStyleSchema, concept: TextStyleSchema}).strict(),
+		textStyles: z.object({caption: TextStyleSchema, highlight: TextStyleSchema, concept: TextStyleSchema, keyword: TextStyleSchema}).strict(),
 		frameStyles: z.object({screen: FrameStyleSchema, bg: FrameStyleSchema}).strict(),
 		safeZone: z.object({x0: z.number(), x1: z.number(), y0: z.number(), y1: z.number()}).strict(),
 		captions: z
@@ -191,6 +194,10 @@ export const deepMerge = <T>(base: T, override: unknown): T => {
 
 export const resolveTheme = (base: Theme, overrides?: Record<string, unknown>): Theme =>
 	overrides ? ThemeSchema.parse(deepMerge(base, overrides)) : base;
+
+// The text as drawn: with the quotes of its style around it.
+export const withQuotes = (text: string, style: Pick<TextStyle, 'quotes'>): string =>
+	style.quotes === 'french' ? `« ${text} »` : style.quotes === 'english' ? `“${text}”` : text;
 
 // Font family name under which a library font file is registered (FontFace), the same in preview and export.
 export const fontFamilyOf = (file: string): string => `AS_${file.replace(/[^A-Za-z0-9]/g, '_')}`;

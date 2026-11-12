@@ -19,6 +19,7 @@ export type EdlCaptionWord = {
 	start: number;
 	end: number;
 	highlight: boolean;
+	keyword?: boolean;
 };
 
 export type EdlCaptionBlock = {

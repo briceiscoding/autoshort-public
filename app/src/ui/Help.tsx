@@ -104,6 +104,10 @@ export const HELP_SECTIONS: Section[] = [
 						<K>Maj</K> + clic sélectionne une suite de mots : <B>Cut selection</B> la coupe, <B>Restore selection</B> la remet, <B>Make concept</B> en fait un
 						mot-clé à l'écran.
 					</li>
+					<li>
+						<B>Mot du CTA</B> (le mot à commenter, ex. « MONTAGE ») : clique dessus puis coche <B>CTA word</B>. Il prend son propre style
+						(Styles → <B>CTA word</B>) : majuscules, couleur, contour, fond et guillemets « » ou “ ”. Corrige son texte si la transcription l'a mal écrit.
+					</li>
 					<li><B>Re-split captions</B> redécoupe tous les blocs selon les réglages de longueur.</li>
 					<li>Les mots soulignés en pointillés sont mal entendus par la transcription : réécoute-les.</li>
 				</ul>

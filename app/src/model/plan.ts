@@ -95,6 +95,9 @@ export const LogoSchema = z
 	.strict();
 
 export const CutInMode = z.enum(['full', 'screen', 'bg']);
+// How a picture comes in: absent = the default of its mode (fade, slide up or cut), pop = scales up with a bounce,
+// top / bottom / left / right = slides in from that edge of the frame with a bounce.
+export const CutInEnter = z.enum(['pop', 'top', 'bottom', 'left', 'right']);
 
 export const CutInSchema = z
 	.object({
@@ -105,11 +108,13 @@ export const CutInSchema = z
 		trim: z.number().min(0).optional(),
 		// Extra scale of a full asset, from its bottom edge.
 		zoom: z.number().positive().optional(),
+		enter: CutInEnter.optional(),
 		// Opacity of the dark veil (0..1).
 		dim: z.number().min(0).max(1).optional(),
 		// Trembling strength in px; 0 or absent = still.
 		shake: z.number().min(0).optional(),
-		// Screen card placement override: centre in canvas px and width.
+		// Placement override in canvas px: centre and width of a screen or bg card; for a full picture, x / y move its
+		// centre (default 540 / 960) and zoom sets its size.
 		x: z.number().optional(),
 		y: z.number().optional(),
 		width: z.number().positive().optional(),

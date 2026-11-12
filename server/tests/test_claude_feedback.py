@@ -78,3 +78,21 @@ def test_current_edit_round_trips_through_the_proposal_format():
     assert kept(again) == kept(plan)
     assert [c["text"] for c in again["concepts"]] == [c["text"] for c in plan.get("concepts", [])]
     assert sorted(w["id"] for w in again["words"] if w.get("highlight")) == sorted(w["id"] for w in plan["words"] if w.get("highlight"))
+
+
+def test_revision_keeps_placement_set_by_hand():
+    import propose_plan
+
+    plan = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    word = sorted(plan["words"], key=lambda w: w["start"])[3]
+    plan["assets"].append({"id": "test_picture", "file": "assets/test_picture.png", "kind": "image", "width": 1080, "height": 1920})
+    first = {"id": "a_test", "asset": "test_picture", "mode": "full", "start": word["start"], "end": word["start"] + 1.5,
+             "trigger": word["id"], "x": 300, "y": 700, "zoom": 1.4, "enter": "left"}
+    plan["cutIns"].append(first)
+    proposal = {"cuts": [], "highlights": [], "concepts": [], "logos": [], "cutIns": [], "diagrams": [], "corrections": [],
+                "subscribeWord": None, "notes": "", **propose_plan.plan_to_proposal(plan)}
+    assert next(c for c in proposal["cutIns"] if c["asset"] == "test_picture")["enter"] == "left"
+    again = propose_plan.apply_proposal(json.loads(json.dumps(plan)), proposal)
+    kept = next(c for c in again["cutIns"] if c["asset"] == first["asset"] and c["mode"] == first["mode"])
+    assert (kept["x"], kept["y"], kept["zoom"], kept["enter"]) == (300, 700, 1.4, "left")
+    assert not store.validate_plan(again)

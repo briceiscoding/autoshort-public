@@ -548,6 +548,16 @@
             "type": "number",
             "exclusiveMinimum": 0
           },
+          "enter": {
+            "type": "string",
+            "enum": [
+              "pop",
+              "top",
+              "bottom",
+              "left",
+              "right"
+            ]
+          },
           "dim": {
             "type": "number",
             "minimum": 0,

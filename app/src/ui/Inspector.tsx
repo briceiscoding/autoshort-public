@@ -352,18 +352,28 @@ const CutInInspector: React.FC<{cutIn: CutIn}> = ({cutIn}) => {
 				</select>
 			</label>
 			{cutIn.mode === 'bg' ? <BgCutoutStatus cutIn={cutIn} /> : null}
+			<label className="field">
+				<span>Entrance</span>
+				<select value={cutIn.enter ?? ''} onChange={(e) => set({enter: (e.target.value || undefined) as CutIn['enter']})}>
+					<option value="">{cutIn.mode === 'full' ? 'Default (cut)' : cutIn.mode === 'bg' ? 'Default (fade and slide up)' : 'Default (fade and grow)'}</option>
+					<option value="pop">Pop (grows with a bounce)</option>
+					<option value="top">From the top</option>
+					<option value="bottom">From the bottom</option>
+					<option value="left">From the left</option>
+					<option value="right">From the right</option>
+				</select>
+			</label>
 			<Range label="Shake (px)" value={cutIn.shake ?? 0} min={0} max={20} step={1} onChange={(v) => set({shake: v || undefined})} />
 			<Range label="Dark veil" value={cutIn.dim ?? 0} min={0} max={0.8} step={0.05} onChange={(v) => set({dim: v || undefined})} />
-			{cutIn.mode === 'full' ? <Range label="Zoom" value={cutIn.zoom ?? 1} min={1} max={2} step={0.01} onChange={(v) => set({zoom: v === 1 ? undefined : v})} /> : null}
+			{cutIn.mode === 'full' ? <Range label="Zoom" value={cutIn.zoom ?? 1} min={0.3} max={4} step={0.01} onChange={(v) => set({zoom: v === 1 ? undefined : v})} /> : null}
 			{asset?.kind === 'video' ? <Num label="Skip first seconds of the video" value={cutIn.trim} min={0} onChange={(v) => set({trim: v})} /> : null}
-			{cutIn.mode !== 'full' ? (
-				<div className="row">
-					<Num label="Centre x" value={cutIn.x} step={1} onChange={(x) => set({x})} />
-					<Num label="Centre y" value={cutIn.y} step={1} onChange={(y) => set({y})} />
-					<Num label="Width" value={cutIn.width} step={1} onChange={(width) => set({width})} />
-					<button className="small" onClick={() => set({x: undefined, y: undefined, width: undefined})}>Reset</button>
-				</div>
-			) : null}
+			<p className="muted small">On the preview: drag the picture to move it, its corner or the mouse wheel to {cutIn.mode === 'full' ? 'zoom' : 'resize'}.</p>
+			<div className="row">
+				<Num label="Centre x" value={cutIn.x} step={1} onChange={(x) => set({x})} />
+				<Num label="Centre y" value={cutIn.y} step={1} onChange={(y) => set({y})} />
+				{cutIn.mode !== 'full' ? <Num label="Width" value={cutIn.width} step={1} onChange={(width) => set({width})} /> : null}
+				<button className="small" onClick={() => set({x: undefined, y: undefined, width: undefined, zoom: undefined})}>Reset</button>
+			</div>
 			<CutInFrameSection cutIn={cutIn} />
 			<Check label="Bloop SFX on entry" value={cutIn.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<TimeFields kind="cutIn" id={cutIn.id} start={cutIn.start} end={cutIn.end} />

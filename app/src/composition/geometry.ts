@@ -45,6 +45,21 @@ export const screenRect = (asset: Pick<EdlAsset, 'aspect' | 'x' | 'y' | 'width'>
 	return {x: cx - w / 2, y: cy - h / 2, w, h};
 };
 
+// Card behind the head (bg mode): centre x / y and width, height from the picture's aspect.
+export const bgRect = (asset: Pick<EdlAsset, 'aspect' | 'x' | 'y' | 'width'>): Rect => {
+	const w = asset.width ?? 900;
+	const h = asset.aspect ? w / asset.aspect : w;
+	return {x: (asset.x ?? 540) - w / 2, y: (asset.y ?? 650) - h / 2, w, h};
+};
+
+// Full frame picture: the 1080x1920 frame scaled by zoom from its bottom edge, then moved by x / y from the centre.
+export const fullRect = (asset: Pick<EdlAsset, 'zoom' | 'x' | 'y'>, width = 1080, height = 1920): Rect => {
+	const z = asset.zoom ?? 1;
+	const w = width * z;
+	const h = height * z;
+	return {x: width / 2 - w / 2 + ((asset.x ?? width / 2) - width / 2), y: height - h + ((asset.y ?? height / 2) - height / 2), w, h};
+};
+
 // Area of a concept text (estimated without a canvas: long texts wrap on two lines), background included.
 export const conceptRect = (text: string, style: TextStyle, theme: Theme): Rect => {
 	const long = text.length > theme.concepts.longAfterChars;

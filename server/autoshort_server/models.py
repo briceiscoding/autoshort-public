@@ -76,6 +76,7 @@ class CutIn(Timed):
     zoom: Optional[float] = None
     dim: Optional[float] = Field(default=None, ge=0, le=1)
     shake: Optional[float] = None
+    enter: Optional[Literal["pop", "top", "bottom", "left", "right"]] = None
     x: Optional[float] = None
     y: Optional[float] = None
     width: Optional[float] = None

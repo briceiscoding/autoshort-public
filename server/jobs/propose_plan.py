@@ -39,7 +39,8 @@ PROPOSAL_SCHEMA = {
         "cutIns": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["asset", "mode", "word", "duration"],
                                               "properties": {"asset": {"type": "string"}, "mode": {"enum": ["screen", "full", "bg"]},
                                                              "word": {"type": "string"}, "duration": {"type": "number"},
-                                                             "shake": {"type": "number"}, "dim": {"type": "number"}}}},
+                                                             "shake": {"type": "number"}, "dim": {"type": "number"},
+                                                             "enter": {"enum": ["pop", "top", "bottom", "left", "right"]}}}},
         "diagrams": {"type": "array", "items": {
             "type": "object", "additionalProperties": False, "required": ["template", "description", "fromWord", "toWord", "elements"],
             "properties": {
@@ -96,7 +97,7 @@ def plan_to_proposal(plan: dict) -> dict:
         "logos": [{"asset": l["asset"], "word": l.get("trigger") or at(l["start"]), "duration": round(l["end"] - l["start"], 2),
                    **({"size": l["size"]} if l.get("size") else {})} for l in plan.get("logos", [])],
         "cutIns": [{"asset": c["asset"], "mode": c["mode"], "word": c.get("trigger") or at(c["start"]),
-                    "duration": round(c["end"] - c["start"], 2), **{k: c[k] for k in ("shake", "dim") if c.get(k)}}
+                    "duration": round(c["end"] - c["start"], 2), **{k: c[k] for k in ("shake", "dim", "enter") if c.get(k)}}
                    for c in plan.get("cutIns", [])],
         "diagrams": [{"template": d["template"], "description": d.get("description", ""), "fromWord": at(d["start"]),
                       "toWord": until(d["end"]),
@@ -154,6 +155,8 @@ diagrams 0 to 2 per short, {theme['diagrams']['minS']} to {theme['diagrams']['ma
 architecture is clearer drawn; every element appears on its trigger word.
 {CUT_RULES}
 Images: landscape pictures go in "screen" mode; "full" only for 9:16 pictures (use shake 6 and dim 0.3 for a hook picture).
+A picture may set enter: "pop" (bounce in place) or "top" / "bottom" / "left" / "right" (slides in from that edge); leave it
+out for the default entrance, and use it sparingly (a punchline, a reveal).
 Subscribe overlay only on a call to action sentence ("abonne-toi", "suivez-moi"...): give its first word id, else null.
 Every asset should find a moment; list the ones you could not place in unplacedAssets.
 
@@ -196,6 +199,9 @@ def auto_cuts(theme: dict, plan: dict | None = None) -> bool:
     """Raw rush (cuts allowed): the choice made at import for this video, else the theme default."""
     saved = (((plan or {}).get("themeOverrides") or {}).get("editing") or {}).get("autoCuts")
     return bool(saved) if saved is not None else bool(theme.get("editing", {}).get("autoCuts", False))
+
+
+CUT_IN_HAND_SET = ("x", "y", "width", "zoom", "frame", "trim", "sfx")
 
 
 def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
@@ -247,6 +253,7 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
                 w["blockStart"] = True
 
     assets = {a["id"] for a in plan["assets"]}
+    old_cut_ins, old_logos = list(plan.get("cutIns", [])), list(plan.get("logos", []))
     plan["concepts"] = [{"id": f"c{i}", "text": c["text"], "start": get(c["fromWord"])["start"], "end": get(c["toWord"])["end"],
                          "trigger": c["fromWord"]}
                         for i, c in enumerate(p["concepts"]) if get(c["fromWord"]) and get(c["toWord"])]
@@ -256,8 +263,18 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
                      for i, l in enumerate(p["logos"]) if l["asset"] in assets and get(l["word"])]
     plan["cutIns"] = [{"id": f"a{i}", "asset": c["asset"], "mode": c["mode"], "start": get(c["word"])["start"],
                        "end": round(get(c["word"])["start"] + max(0.4, c["duration"]), 3), "trigger": c["word"],
-                       **({"shake": c["shake"]} if c.get("shake") else {}), **({"dim": c["dim"]} if c.get("dim") else {})}
+                       **({"shake": c["shake"]} if c.get("shake") else {}), **({"dim": c["dim"]} if c.get("dim") else {}),
+                       **({"enter": c["enter"]} if c.get("enter") else {})}
                       for i, c in enumerate(p["cutIns"]) if c["asset"] in assets and get(c["word"])]
+    # What the author set by hand on a picture that stays (moved, zoomed, framed, trimmed): Claude does not see it.
+    for new in plan["cutIns"]:
+        old = next((o for o in old_cut_ins if o["asset"] == new["asset"] and o["mode"] == new["mode"]), None)
+        if old:
+            new.update({k: old[k] for k in CUT_IN_HAND_SET if k in old and k not in new})
+    for new in plan["logos"]:
+        old = next((o for o in old_logos if o["asset"] == new["asset"]), None)
+        if old:
+            new.update({k: old[k] for k in ("x", "y", "size", "process", "sfx") if k in old and k not in new})
     diagrams = []
     for i, d in enumerate(p["diagrams"]):
         a, b = get(d["fromWord"]), get(d["toWord"])

@@ -57,6 +57,7 @@ export type EdlAsset = {
 	zoom?: number;
 	dim?: number;
 	shake?: number;
+	enter?: 'pop' | 'top' | 'bottom' | 'left' | 'right';
 	aspect?: number;
 	x?: number;
 	y?: number;

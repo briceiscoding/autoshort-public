@@ -144,6 +144,7 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 			...(c.zoom !== undefined ? {zoom: c.zoom} : {}),
 			...(c.dim !== undefined ? {dim: c.dim} : {}),
 			...(c.shake !== undefined ? {shake: c.shake} : {}),
+			...(c.enter !== undefined ? {enter: c.enter} : {}),
 			...(asset?.width && asset?.height ? {aspect: round3(asset.width / asset.height)} : {}),
 			...(c.x !== undefined ? {x: c.x} : {}),
 			...(c.y !== undefined ? {y: c.y} : {}),

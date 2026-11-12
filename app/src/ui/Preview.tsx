@@ -2,7 +2,7 @@
 import {Player, type PlayerRef} from '@remotion/player';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {activeBlock, layoutBlock} from '../composition/Captions';
-import {captionRect, conceptRect, logoRect, screenRect, snapToCenter, type Rect} from '../composition/geometry';
+import {bgRect, captionRect, conceptRect, fullRect, logoRect, screenRect, snapToCenter, type Rect} from '../composition/geometry';
 import {Main, type MainProps} from '../composition/Main';
 import {round3} from '../edl/time';
 import type {CutIn, Logo, Plan} from '../model/plan';
@@ -122,7 +122,7 @@ export const Preview: React.FC = () => {
 	);
 };
 
-// What can be dragged on the preview: the selected logo, screen card or concept, or a whole type of text (Styles tab).
+// What can be dragged on the preview: the selected logo, picture (any mode) or concept, or a whole type of text (Styles tab).
 type Draggable = {
 	rect: Rect;
 	text: boolean;
@@ -152,14 +152,32 @@ const useDraggable = (): Draggable | null => {
 	}
 	if (selection?.kind === 'cutIn') {
 		const asset = edl.assets.find((a) => a.id === selection.id);
-		if (!asset || asset.mode !== 'screen' || !visible(asset)) return null;
-		const rect = screenRect(asset, theme);
+		if (!asset || !visible(asset)) return null;
+		if (asset.mode === 'full') {
+			// Full frame picture: move its centre, resize = zoom (from its bottom edge).
+			const rect = fullRect(asset, edl.width, edl.height);
+			const x0 = asset.x ?? edl.width / 2;
+			const y0 = asset.y ?? edl.height / 2;
+			const z0 = asset.zoom ?? 1;
+			return {
+				rect,
+				text: false,
+				patch: (mode, dx, dy) => (p) =>
+					updateEvent<CutIn>(
+						p,
+						'cutIn',
+						asset.id,
+						mode === 'move' ? {x: round3(x0 + dx), y: round3(y0 + dy)} : {zoom: round3(Math.min(4, Math.max(0.3, (z0 * (rect.w + dx * 2)) / rect.w)))},
+					),
+			};
+		}
+		const rect = asset.mode === 'bg' ? bgRect(asset) : screenRect(asset, theme);
 		const {cx, cy} = center(rect);
 		return {
 			rect,
 			text: false,
 			patch: (mode, dx, dy) => (p) =>
-				updateEvent<CutIn>(p, 'cutIn', asset.id, mode === 'move' ? {x: round3(cx + dx), y: round3(cy + dy)} : {width: Math.max(200, Math.round(rect.w + dx * 2))}),
+				updateEvent<CutIn>(p, 'cutIn', asset.id, mode === 'move' ? {x: round3(cx + dx), y: round3(cy + dy)} : {width: Math.max(120, Math.round(rect.w + dx * 2))}),
 		};
 	}
 	if (selection?.kind === 'concept') {
@@ -216,6 +234,19 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 	const {edl} = useDerived();
 	const draggable = useDraggable();
 	const drag = useRef<{mode: 'move' | 'resize'; x: number; y: number; target: Draggable} | null>(null);
+	// Mouse wheel over the selected item resizes it; one undo step per burst of wheel ticks.
+	const wheel = useRef<{target: Draggable; dx: number; timer: number} | null>(null);
+	// Native listener: React's wheel listener is passive and could not stop the page from scrolling.
+	const box = useRef<HTMLDivElement | null>(null);
+	const onWheelRef = useRef<(e: WheelEvent) => void>(() => {});
+	const hasTarget = Boolean(draggable);
+	useEffect(() => {
+		const el = box.current;
+		if (!el) return;
+		const listener = (e: WheelEvent) => onWheelRef.current(e);
+		el.addEventListener('wheel', listener, {passive: false});
+		return () => el.removeEventListener('wheel', listener);
+	}, [hasTarget]);
 	const [guides, setGuides] = useState({vertical: false, horizontal: false});
 	if (!draggable) return null;
 	const {rect} = draggable;
@@ -243,6 +274,20 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 		drag.current = null;
 		setGuides({vertical: false, horizontal: false});
 	};
+	onWheelRef.current = (e: WheelEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!wheel.current) {
+			editor.beginGesture();
+			wheel.current = {target: draggable, dx: 0, timer: 0};
+		}
+		const w = wheel.current;
+		window.clearTimeout(w.timer);
+		w.timer = window.setTimeout(() => (wheel.current = null), 400);
+		// About 4 % of the item's width per tick, in either direction.
+		w.dx += (-Math.sign(e.deltaY) * w.target.rect.w * 0.04) / 2;
+		editor.applyLive(w.target.patch('resize', w.dx, (w.dx * w.target.rect.h) / w.target.rect.w));
+	};
 
 	return (
 		<>
@@ -254,7 +299,8 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 				onPointerDown={onDown('move')}
 				onPointerMove={onMove}
 				onPointerUp={onUp}
-				title="Drag to move (sticks to the centre lines)"
+				ref={box}
+				title="Drag to move (sticks to the centre lines), wheel or corner to resize"
 			>
 				<div className="drag-resize" onPointerDown={onDown('resize')} onPointerMove={onMove} onPointerUp={onUp} title="Drag to resize" />
 			</div>

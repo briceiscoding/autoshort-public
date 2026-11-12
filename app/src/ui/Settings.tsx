@@ -4,6 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {api, type ClaudeSettings} from './api';
 import {ColorModeToggle} from './colorMode';
 import {Icon} from './icons';
+import {HomeFooter} from './links';
 
 const MODE_TEXT: Record<ClaudeSettings['mode'], string> = {
 	subscription: 'Your Claude subscription (token saved in AutoShort)',
@@ -137,6 +138,7 @@ export const SettingsPage: React.FC = () => {
 					The token stays on this computer (settings.local.json in the AutoShort folder, never committed): only Claude Code sends it, to Anthropic.
 				</p>
 			</section>
+			<HomeFooter />
 		</div>
 	);
 };

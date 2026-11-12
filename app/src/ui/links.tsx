@@ -26,6 +26,14 @@ export const SocialLinks: React.FC<{size?: number; withLabels?: boolean}> = ({si
 };
 
 // Free resources, suggested where the user needs a file (check each site's licence before publishing).
+// Footer of the full pages (home, brand kit, settings, help, a new short): pinned to the bottom of the window.
+export const HomeFooter: React.FC = () => (
+	<footer className="home-footer muted small">
+		<span className="grow">AutoShort · local editor for face cam shorts · <a href="#/~help">Help</a></span>
+		<SocialLinks withLabels />
+	</footer>
+);
+
 export const FREE_RESOURCES = {
 	sfx: [
 		{label: 'Pixabay', url: 'https://pixabay.com/sound-effects/'},

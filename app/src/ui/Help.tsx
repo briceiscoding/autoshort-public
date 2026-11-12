@@ -3,6 +3,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ColorModeToggle} from './colorMode';
 import {Icon} from './icons';
+import {HomeFooter} from './links';
 
 type Section = {id: string; title: string; body: React.ReactNode};
 
@@ -428,6 +429,7 @@ export const HelpPage: React.FC<{section?: string}> = ({section}) => {
 					))}
 				</div>
 			</div>
+			<HomeFooter />
 		</div>
 	);
 };

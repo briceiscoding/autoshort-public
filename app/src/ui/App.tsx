@@ -4,7 +4,7 @@ import {BrandKitPage} from './BrandKit';
 import {ColorModeToggle} from './colorMode';
 import {Editor} from './Editor';
 import {Icon} from './icons';
-import {SocialLinks} from './links';
+import {HomeFooter} from './links';
 import {SettingsPage} from './Settings';
 import {HelpPage} from './Help';
 
@@ -127,10 +127,7 @@ const VideoList: React.FC = () => {
 					</a>
 				))}
 			</div>
-			<footer className="home-footer muted small">
-				<span className="grow">AutoShort · local editor for face cam shorts</span>
-				<SocialLinks withLabels />
-			</footer>
+			<HomeFooter />
 		</div>
 	);
 };

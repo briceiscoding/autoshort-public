@@ -517,3 +517,10 @@ kbd { font: 600 11.5px ui-monospace, 'Cascadia Code', Consolas, monospace; paddi
 /* an icon link (help) looks like the icon buttons next to it */
 a.icon-btn { border-color: transparent; background: transparent; color: var(--muted); }
 a.icon-btn:hover { color: var(--text); background: var(--hover); }
+
+/* full pages: at least the window's height, the footer pinned to its bottom when the content is short */
+.home { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding-bottom: 18px; }
+.home > .back-link { align-self: flex-start; }
+.home > .home-footer { margin-top: auto; }
+.home > :nth-last-child(2) { margin-bottom: 36px; }
+.home > .video-grid { margin-top: 0; }

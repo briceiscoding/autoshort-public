@@ -9,7 +9,7 @@ import {ThemeSchema, resolveTheme} from '../model/theme';
 import {api, type VideoState} from './api';
 import {ColorModeToggle} from './colorMode';
 import {Icon} from './icons';
-import {FreeLinks, SocialLinks} from './links';
+import {FreeLinks, HomeFooter, SocialLinks} from './links';
 import {DerivedContext, fmtTime, player, type Derived} from './context';
 import {FileDrop} from './FileDrop';
 import {editor, useEditor} from './editorStore';
@@ -197,6 +197,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 				</header>
 				<p className="muted">Add your assets and your video, then launch it.</p>
 				<SetupJobs slug={slug} video={video} onDone={refreshMeta} />
+				<HomeFooter />
 			</div>
 		);
 	}

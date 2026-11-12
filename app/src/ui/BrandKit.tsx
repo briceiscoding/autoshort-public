@@ -4,7 +4,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {api, type BrandKit} from './api';
 import {ColorModeToggle} from './colorMode';
 import {Icon} from './icons';
-import {FreeLinks} from './links';
+import {FreeLinks, HomeFooter} from './links';
 
 const MOMENTS: Record<string, {label: string; hint: string}> = {
 	cutIn: {label: 'A picture appears', hint: 'screen, full and bg pictures'},
@@ -188,6 +188,7 @@ export const BrandKitPage: React.FC = () => {
 				</div>
 			) : null}
 			<p className="muted small">Check the licence of every file you download before publishing your videos.</p>
+			<HomeFooter />
 		</div>
 	);
 };

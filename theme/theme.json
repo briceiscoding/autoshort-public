@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "keepSource60": true,
+    "crf": 18,
+    "preset": "veryfast",
+    "audioBitrate": "192k",
+    "audioRate": 48000,
+    "targetDurationS": 60
+  },
+  "colors": {
+    "accent": "#FF0855",
+    "white": "#FFFFFF",
+    "cream": "#F4EFE6",
+    "diagramBg": "#1A1A1D",
+    "success": "#22C55E"
+  },
+  "fonts": {
+    "caption": {
+      "family": "PoppinsExtraBold",
+      "file": "fonts/Poppins-ExtraBold.ttf"
+    },
+    "display": {
+      "family": "MontserratExtraBold",
+      "file": "fonts/Montserrat-ExtraBold.ttf"
+    }
+  },
+  "textStyles": {
+    "caption": {
+      "font": "fonts/Poppins-ExtraBold.ttf",
+      "size": 66,
+      "bold": false,
+      "italic": false,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "lineHeight": 1.2,
+      "color": "#FFFFFF",
+      "stroke": null,
+      "shadow": null,
+      "background": null,
+      "x": 540,
+      "y": 1300,
+      "maxWidth": 780
+    },
+    "highlight": {
+      "font": "fonts/Poppins-ExtraBold.ttf",
+      "size": 66,
+      "bold": false,
+      "italic": false,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "lineHeight": 1.2,
+      "color": "#FFFFFF",
+      "stroke": null,
+      "shadow": null,
+      "background": {
+        "color": "#FF0855",
+        "opacity": 1,
+        "radius": 14,
+        "padX": 14,
+        "padY": 6
+      },
+      "x": 540,
+      "y": 1300,
+      "maxWidth": 780
+    },
+    "concept": {
+      "font": "fonts/Montserrat-ExtraBold.ttf",
+      "size": 233,
+      "bold": false,
+      "italic": false,
+      "uppercase": true,
+      "letterSpacing": 0,
+      "lineHeight": 1.05,
+      "color": "#E1FF00",
+      "stroke": null,
+      "shadow": {
+        "x": 0,
+        "y": 6,
+        "blur": 14,
+        "color": "#000000",
+        "opacity": 0.5
+      },
+      "background": null,
+      "x": 540,
+      "y": 420,
+      "maxWidth": 780
+    }
+  },
+  "safeZone": {
+    "x0": 90,
+    "x1": 930,
+    "y0": 220,
+    "y1": 1440
+  },
+  "captions": {
+    "wordGap": 26,
+    "minBlockS": 0.4,
+    "popS": 0.15,
+    "minWords": 1,
+    "maxWords": 3,
+    "maxLineChars": 18,
+    "maxLines": 1
+  },
+  "highlight": {
+    "blobTimes": [
+      0,
+      0.16,
+      0.42
+    ],
+    "blobScales": [
+      0.85,
+      1.3,
+      1
+    ]
+  },
+  "concepts": {
+    "longAfterChars": 12,
+    "longScale": 0.64,
+    "letterS": 0.045,
+    "fadeS": 0.15,
+    "minSpacingS": 8,
+    "maxS": 4
+  },
+  "editing": {
+    "autoCuts": false
+  },
+  "logos": {
+    "size": 180,
+    "centerX": 540,
+    "centerY": 420,
+    "popS": 0.25
+  },
+  "frameStyles": {
+    "screen": {"radius": 24, "border": null, "shadow": {"x": 0, "y": 20, "blur": 40, "color": "#000000", "opacity": 0.35}},
+    "bg": {"radius": 24, "border": null, "shadow": {"x": 0, "y": 20, "blur": 40, "color": "#000000", "opacity": 0.35}}
+  },
+  "screen": {
+    "maxWidth": 840,
+    "maxHeight": 930,
+    "left": 90,
+    "centerY": 685
+  },
+  "diagrams": {
+    "minS": 3,
+    "maxS": 8,
+    "grid": 96,
+    "strokeWidth": 7,
+    "roughness": 1.4,
+    "maxBottomY": 1150,
+    "maxElements": 6
+  },
+  "zoom": {
+    "scale": 1.12,
+    "originY": 760
+  },
+  "audio": {
+    "voiceLufs": -12,
+    "truePeak": -1,
+    "lra": 11,
+    "sfxUnderVoiceDb": 10,
+    "musicUnderVoiceDb": 22,
+    "previewSfxGain": 0.5,
+    "previewMusicGain": 0.06
+  },
+  "sfx": {
+    "cutIn": "bloop.wav",
+    "logo": "bloop.wav",
+    "conceptTyping": "keyboard_typing_fast.wav",
+    "diagramOpen": "whoosh.wav",
+    "diagramElement": "bloop.wav",
+    "gauge": "bloop.wav",
+    "gaugeLanding": "bloop.wav",
+    "zoom": "whoosh.wav"
+  },
+  "subscribe": {
+    "file": "brand/subscribe.mp4",
+    "scale": 0.33,
+    "x": 332,
+    "y": -72,
+    "keyColor": "0x00983B"
+  },
+  "calm": {
+    "enabled": true
+  },
+  "hesitations": [
+    "euh",
+    "heu",
+    "bah",
+    "hum",
+    "hmm",
+    "ben",
+    "beh"
+  ],
+  "callToAction": [
+    "abonne-toi",
+    "abonnez-vous",
+    "rejoins la chaîne",
+    "s'abonner",
+    "pense à t'abonner",
+    "suivez-moi",
+    "suis-moi",
+    "abonne toi",
+    "abonnez vous"
+  ]
+}

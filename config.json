@@ -1,0 +1,8 @@
+{
+  "projectsRoot": "projects",
+  "libraryRoot": "library",
+  "aiPython": "ai/.venv",
+  "claudeCommand": "claude",
+  "backendPort": 8765,
+  "frontendPort": 5173
+}

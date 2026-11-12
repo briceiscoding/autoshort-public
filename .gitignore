@@ -1,0 +1,16 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+dist/
+config.local.json
+.pytest_cache/
+app/src/composition/custom/registry.generated.ts
+render-bundle/
+logs/
+projects/*
+!projects/README.md
+ai/models/
+.env
+.env.*
+*.log

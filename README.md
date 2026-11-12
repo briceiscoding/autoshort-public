@@ -1,0 +1,78 @@
+# AutoShort
+
+Éditeur local de shorts face cam (9:16) : tu déposes ta vidéo, l'app écrit les sous-titres, ajoute des zooms, place
+tes images sur le bon mot, et exporte un MP4 prêt pour TikTok, YouTube Shorts et Reels. Tout tourne sur ton
+ordinateur : ta vidéo ne part sur aucun serveur.
+
+## Ce qu'il te faut
+
+- **Windows avec une carte graphique NVIDIA** (CUDA), ou un **Mac Apple Silicon** (M1 et plus, l'import est plus lent).
+  Un PC sans carte NVIDIA ne peut pas transcrire.
+- Environ 10 Go libres (les modèles d'IA sont téléchargés une seule fois au premier lancement).
+- [Node.js 22](https://nodejs.org), [uv](https://docs.astral.sh/uv/getting-started/installation/) et
+  [ffmpeg](https://ffmpeg.org/download.html) installés et accessibles dans le terminal.
+- Optionnel : [Claude Code](https://claude.com/claude-code) avec un abonnement Claude (Pro ou Max) pour la proposition
+  de montage automatique. Sans Claude, tout le reste fonctionne.
+
+## Installation
+
+1. Télécharge le repo (bouton **Code → Download ZIP**, puis décompresse) ou `git clone`.
+2. **Windows** : double-clique sur `start.bat`. **macOS** : `brew install node uv ffmpeg`, puis double-clique sur
+   `launcher/AutoShort.command` (si macOS refuse : clic droit → Ouvrir).
+3. Le premier lancement installe tout ce qui manque (plusieurs minutes, quelques Go), puis l'app s'ouvre dans sa
+   propre fenêtre. Les lancements suivants prennent quelques secondes.
+
+Fermer la fenêtre arrête l'app. Pour une icône sur le bureau Windows : crée un raccourci vers `launcher/AutoShort.vbs`
+avec l'icône `launcher/autoshort-icon.ico`.
+
+## Ton premier short
+
+1. **New short** sur l'accueil, puis dépose ta vidéo et tes images.
+   Nomme une image `<mode>__<mot>.png` pour qu'elle apparaisse quand tu prononces ce mot :
+   `logo__docker.png`, `screen__dashboard.png`, `full__resultat.jpg`, `bg__serveur.jpg` (derrière ta tête).
+2. **Launch the video** : choisis si ta vidéo est déjà montée (rien n'est coupé) ou brute (silences, « euh » et
+   répétitions coupés). Transcription, sous-titres et zooms sont faits automatiquement.
+3. Optionnel : **Plan proposal (Claude)** propose des mots concepts, des schémas animés et place tes images.
+4. Retouche : texte des sous-titres (Transcript), timeline, Inspector, onglet **Styles** (polices, couleurs, contours).
+5. **Export the video** : le MP4 et ses sous-titres `.srt`, dans le projet et dans le dossier de ton choix.
+
+## Personnaliser
+
+- `library/charte.md` : les règles de montage (couleurs, polices, rythme). C'est un exemple, adapte-le à ta marque :
+  Claude le lit pour proposer chaque montage.
+- `theme/theme.json` : les valeurs utilisées au rendu (aussi modifiables depuis l'onglet Styles).
+- `library/` : polices, effets sonores et overlay d'abonnement, voir `library/README.md`.
+- `theme/vocabulary.json` : les mots que la transcription écrit mal dans tes vidéos.
+
+## Confidentialité
+
+L'app ne collecte rien et n'envoie rien. Seule la proposition Claude (optionnelle) envoie la transcription de ta
+vidéo à Claude, via ton propre compte Claude Code.
+
+## Licences et crédits
+
+- Code : [MIT](LICENSE).
+- `ai/rvm/` : [Robust Video Matting](https://github.com/PeterL1n/RobustVideoMatting), GPL-3.0 (licence dans le
+  dossier), utilisé pour le détourage derrière la tête.
+- Rendu : [Remotion](https://www.remotion.dev), gratuit pour les particuliers et les petites équipes ; une entreprise de
+  plus de 3 personnes doit prendre une [licence Remotion](https://www.remotion.dev/license).
+- Transcription : WhisperX et Silero VAD. Polices : SIL Open Font License. Icônes : Lucide (ISC) et Simple Icons (CC0).
+  Effets sonores fournis : générés pour AutoShort, domaine public.
+
+Fourni tel quel, sans garantie ni support. Fait par [@briceiscoding](https://youtube.com/@briceiscoding) :
+[YouTube](https://youtube.com/@briceiscoding) · [TikTok](https://tiktok.com/@briceiscoding) ·
+[Instagram](https://instagram.com/briceiscoding).
+
+## Développement
+
+```
+cd app
+npm test               # vitest
+npm run gen:schema     # régénère schema/*.json depuis le modèle zod
+cd ../server
+.venv/Scripts/python -m pytest -q     # macOS : .venv/bin/python -m pytest -q
+```
+
+Architecture : `docs/ARCHITECTURE.md`. Ports et chemins : `config.json` (surcharge locale dans `config.local.json`).
+Le contrôle de types complet (`npm run typecheck`) demande un premier export, qui génère
+`app/src/composition/custom/registry.generated.ts`.

@@ -1,0 +1,9 @@
+{
+  "_comment": "Technical vocabulary corrections applied at import (spoken token -> caption text, punctuation kept). Case sensitive keys. Add the words Whisper gets wrong in your videos.",
+  "Cloud": "Claude",
+  "Clode": "Claude",
+  "Next.JS": "Next.js",
+  "NextJS": "Next.js",
+  "Supabaz": "Supabase",
+  "ESP 32": "ESP32"
+}

@@ -26,8 +26,9 @@ ordinateur : ta vidéo ne part sur aucun serveur.
 
 Pour Claude : bouton **Settings** sur l'accueil. Colle le jeton donné par `claude setup-token` (abonnement) ou une
 clé API, ou laisse vide si tu t'es déjà connecté avec `claude` dans un terminal. Le bouton **Test the connection**
-vérifie que tout marche. Fermer la fenêtre arrête l'app. Pour une icône sur le bureau Windows : crée un raccourci vers `launcher/AutoShort.vbs`
-avec l'icône `launcher/autoshort-icon.ico`.
+vérifie que tout marche. Fermer la fenêtre arrête l'app. Au premier lancement, une icône **AutoShort** apparaît sur ton bureau (et dans le
+menu Démarrer sur Windows) : c'est elle que tu utilises ensuite. Sur Mac, autorise Terminal à contrôler le Finder si
+macOS le demande.
 
 ## Ton premier short
 

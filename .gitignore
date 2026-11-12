@@ -5,6 +5,7 @@ __pycache__/
 dist/
 config.local.json
 settings.local.json
+launcher/.shortcut-created
 .pytest_cache/
 app/src/composition/custom/registry.generated.ts
 render-bundle/

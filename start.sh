@@ -46,6 +46,26 @@ fi
 
 for _ in $(seq 1 60); do
   if curl -s -o /dev/null "http://127.0.0.1:$FRONT_PORT/" && curl -s -o /dev/null "http://127.0.0.1:$BACKEND_PORT/api/health"; then
+    # First launch only: an AutoShort icon (alias of the launcher, with the app icon) on the desktop. macOS may ask
+    # whether Terminal can control the Finder: allow it, or drag launcher/AutoShort.command to the Dock instead.
+    if [ ! -e launcher/.shortcut-created ]; then
+      osascript - "$ROOT/launcher/AutoShort.command" "$ROOT/launcher/autoshort.png" >/dev/null 2>&1 <<'OSA' || true
+use framework "AppKit"
+use scripting additions
+on run argv
+  set target to item 1 of argv
+  set iconPath to item 2 of argv
+  tell application "Finder"
+    if exists file "AutoShort" of desktop then return
+    set made to make alias file to (POSIX file target as alias) at desktop with properties {name:"AutoShort"}
+    set aliasPath to POSIX path of (made as alias)
+  end tell
+  set img to current application's NSImage's alloc()'s initWithContentsOfFile:iconPath
+  current application's NSWorkspace's sharedWorkspace()'s setIcon:img forFile:aliasPath options:0
+end run
+OSA
+      touch launcher/.shortcut-created
+    fi
     URL="http://127.0.0.1:$FRONT_PORT/"
     # Own window (no tabs, no address bar) in Chrome or Edge when installed, the default browser otherwise.
     for browser in "Google Chrome" "Microsoft Edge"; do

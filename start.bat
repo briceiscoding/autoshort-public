@@ -39,6 +39,11 @@ pause
 exit /b 1
 
 :open
+rem First launch only: an AutoShort icon on the desktop and in the Start menu, to start the app next times.
+if not exist "launcher\.shortcut-created" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0launcher\create-shortcut.ps1" -Root "%~dp0." >nul 2>&1
+  echo created> "launcher\.shortcut-created"
+)
 rem Own window (no tabs, no address bar), in the usual Chrome profile, else Edge (always on Windows); Firefox has no
 rem such window mode.
 set URL=http://127.0.0.1:%FRONT_PORT%/

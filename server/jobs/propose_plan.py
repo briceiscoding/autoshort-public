@@ -2,7 +2,10 @@
 cwd = the video folder, read-only tools. Claude returns DATA (a proposal referencing word ids); this script merges
 it into the current plan and writes data/plan.draft.json, validated against the plan contract, for review in the UI.
 
-Usage: python propose_plan.py <video_dir> <theme_json> <schema_dir> <claude_command>
+Usage: python propose_plan.py <video_dir> <theme_json> <schema_dir> <claude_command> [--feedback-file <json>]
+
+With --feedback-file (a JSON {"feedback": "..."} written by the backend), Claude revises the CURRENT edit following
+the author's feedback instead of proposing from scratch.
 """
 import json
 import shutil
@@ -63,7 +66,65 @@ TEMPLATES = """Diagram templates (layout is automatic, you only give content, ma
 Icons: lucide names in kebab case (e.g. memory-stick, code-xml, crosshair, move, triangle-alert, user, database, cpu) or stick-figure."""
 
 
-def build_prompt(video: Path, plan: dict, theme: dict) -> str:
+def plan_to_proposal(plan: dict) -> dict:
+    """The current edit in the proposal format (word ids), so Claude can revise it rather than start over."""
+    ordered = sorted(plan["words"], key=lambda w: w["start"])
+    if not ordered:
+        return {}
+
+    def at(t: float) -> str:
+        return min(ordered, key=lambda w: abs(w["start"] - t))["id"]
+
+    def until(t: float) -> str:
+        inside = [w for w in ordered if w["start"] < t]
+        return (inside[-1] if inside else ordered[0])["id"]
+
+    cuts = []
+    for s in plan["spans"]:
+        if s["keep"]:
+            continue
+        inside = [w for w in ordered if s["start"] - 0.03 <= w["start"] < s["end"]]
+        if inside:
+            cuts.append({"fromWord": inside[0]["id"], "toWord": inside[-1]["id"], "reason": s.get("reason") or "manual"})
+    return {
+        "cuts": cuts,
+        "highlights": [w["id"] for w in ordered if w.get("highlight")],
+        "blockStarts": [w["id"] for w in ordered if w.get("blockStart")],
+        "corrections": [{"word": w["id"], "text": w["text"]} for w in ordered if w.get("original")],
+        "concepts": [{"text": c["text"], "fromWord": c.get("trigger") or at(c["start"]), "toWord": until(c["end"])}
+                     for c in plan.get("concepts", [])],
+        "logos": [{"asset": l["asset"], "word": l.get("trigger") or at(l["start"]), "duration": round(l["end"] - l["start"], 2),
+                   **({"size": l["size"]} if l.get("size") else {})} for l in plan.get("logos", [])],
+        "cutIns": [{"asset": c["asset"], "mode": c["mode"], "word": c.get("trigger") or at(c["start"]),
+                    "duration": round(c["end"] - c["start"], 2), **{k: c[k] for k in ("shake", "dim") if c.get(k)}}
+                   for c in plan.get("cutIns", [])],
+        "diagrams": [{"template": d["template"], "description": d.get("description", ""), "fromWord": at(d["start"]),
+                      "toWord": until(d["end"]),
+                      "elements": [{"label": e["label"], "word": at(e["at"]),
+                                    **{k: e[k] for k in ("icon", "image", "accent", "strike", "check") if e.get(k)}}
+                                   for e in d.get("elements", [])]}
+                     for d in plan.get("diagrams", [])],
+        "subscribeWord": (plan.get("subscribe") or {}).get("trigger"),
+    }
+
+
+def feedback_section(plan: dict, feedback: str) -> str:
+    current = json.dumps(plan_to_proposal(plan), ensure_ascii=False, separators=(",", ":"))
+    return f"""
+REVISION REQUEST. The author already has an edit (below, in the answer format) and gives you feedback on it.
+Return the COMPLETE revised edit in the same format: apply the feedback, and keep unchanged everything the feedback
+does not ask to change (same cuts, events, words and timings). To un-cut words, list their ids in restores. In notes,
+say in one or two sentences what you changed.
+
+Author feedback (it takes priority over the general rules above, except the rule never to invent caption text):
+{feedback}
+
+Current edit:
+{current}
+"""
+
+
+def build_prompt(video: Path, plan: dict, theme: dict, feedback: str = "") -> str:
     spans = sorted(plan["spans"], key=lambda s: s["start"])
     if auto_cuts(theme, plan):
         CUT_RULES = ("Cut hesitations, abandoned sentences and failed takes (keep the LAST complete take). When unsure about "
@@ -109,7 +170,7 @@ Asset catalog (id, kind, size, file):
 
 Transcript (word id, rush time, text; CUT = currently cut):
 {chr(10).join(lines)}
-"""
+{feedback_section(plan, feedback) if feedback else ""}"""
 
 
 def word_map(plan: dict) -> dict:
@@ -155,6 +216,9 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
         if not a or not b:
             continue
         i, j = sorted((index[a["id"]], index[b["id"]]))
+        # Already cut (a revision gives back the current cuts): keep the existing spans exactly as they are.
+        if all(not any(s["keep"] and s["start"] - 0.03 <= w["start"] < s["end"] for s in spans) for w in ordered[i:j + 1]):
+            continue
         prev = ordered[i - 1] if i > 0 else None
         nxt = ordered[j + 1] if j + 1 < len(ordered) else None
         start = max(prev["end"], ordered[i]["start"] - 0.08) if prev else max(0, ordered[i]["start"] - 0.08)
@@ -218,8 +282,22 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
     return plan
 
 
+AUTH_HINT = ("Claude Code is not connected: open Settings in AutoShort (home page) to paste a token, or run `claude` "
+             "once in a terminal to log in. Claude Code needs a Claude Pro or Max subscription, or an Anthropic Console API key.")
+
+
+def explain(text: str) -> str:
+    low = text.lower()
+    if any(k in low for k in ("invalid api key", "not logged in", "please run /login", "authentication", "oauth", "401", "credit balance")):
+        return text.strip()[:600] + " " + AUTH_HINT
+    return text
+
+
 def run_claude(command: str, prompt: str, cwd: Path) -> dict:
-    exe = shutil.which(command) or command
+    exe = shutil.which(command)
+    if not exe:
+        raise SystemExit("Claude Code is not installed on this computer: npm install -g @anthropic-ai/claude-code, then see "
+                         "Settings in AutoShort.")
     base = [exe, "-p", "--output-format", "json", "--allowedTools", "Read", "Glob", "Grep",
             "--disallowedTools", "Bash", "Edit", "Write", "WebFetch", "WebSearch"]
     attempts = [base + ["--json-schema", json.dumps(PROPOSAL_SCHEMA)], base]
@@ -229,11 +307,12 @@ def run_claude(command: str, prompt: str, cwd: Path) -> dict:
                               + json.dumps(PROPOSAL_SCHEMA), cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
         last = (done.stderr or done.stdout)[-2000:]
         if done.returncode != 0:
-            print(f"claude exited {done.returncode}: {last}")
+            print(f"claude exited {done.returncode}: {explain(last)}")
             continue
         envelope = json.loads(done.stdout)
         if envelope.get("is_error"):
-            print("claude error:", envelope.get("result"))
+            last = str(envelope.get("result"))
+            print("claude error:", explain(last))
             continue
         data = envelope.get("structured_output")
         if data is None:
@@ -244,18 +323,21 @@ def run_claude(command: str, prompt: str, cwd: Path) -> dict:
             cost = envelope.get("total_cost_usd")
             print(f"claude answered ({envelope.get('num_turns')} turns{f', ${cost:.3f}' if cost else ''})")
             return data
-    raise SystemExit(f"Claude did not return a proposal: {last}")
+    raise SystemExit(f"Claude did not return a proposal: {explain(last)}")
 
 
 def main() -> None:
     video, theme_file, schema_dir, command = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4]
+    feedback = ""
+    if "--feedback-file" in sys.argv:
+        feedback = (read_json(Path(sys.argv[sys.argv.index("--feedback-file") + 1])) or {}).get("feedback") or ""
     theme = json.loads(theme_file.read_text(encoding="utf-8"))
     app = app_dir(video)
     plan = read_json(app / "plan.json") or read_json(app / "plan.draft.json")
     if not plan:
         raise SystemExit("import the rush first: the proposal starts from the transcription")
-    progress(0.05, "asking Claude (headless)")
-    proposal = run_claude(command, build_prompt(video, plan, theme), video)
+    progress(0.05, "asking Claude to revise the edit (headless)" if feedback else "asking Claude (headless)")
+    proposal = run_claude(command, build_prompt(video, plan, theme, feedback), video)
     jsonschema.validate(proposal, PROPOSAL_SCHEMA)
     write_json(app / "cache" / "proposal.json", proposal)
     progress(0.8, "merging the proposal")

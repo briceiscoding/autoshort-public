@@ -142,6 +142,7 @@ class JobManager:
 
     def _exec(self, job: Job, step: Step, report) -> None:
         env = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8", **(step.env or {})}
+        env = {k: v for k, v in env.items() if v is not None}  # a None value in step.env removes the variable
         process = subprocess.Popen(
             step.command, cwd=step.cwd, env=env, stdin=subprocess.PIPE if step.stdin is not None else subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",

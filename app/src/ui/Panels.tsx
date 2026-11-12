@@ -3,7 +3,7 @@ import {TEMPLATE_INFO} from '../composition/diagrams/templates';
 import {outputToRush, rushToOutput, segmentOfWord} from '../edl/time';
 import type {LintWarning} from '../lint/lint';
 import {parsePlan, type Diagram} from '../model/plan';
-import {api, type JobInfo} from './api';
+import {api, type HistoryItem, type JobInfo} from './api';
 import {DerivedContext, fmtTime, player, useDerived} from './context';
 import {editor, useEditor, type Selection} from './editorStore';
 import * as ops from './ops';
@@ -374,12 +374,20 @@ const CutsDialog: React.FC<{current: boolean | null; replaces: boolean; onChoose
 	</div>
 );
 
-export const JobsPanel: React.FC<{standalone?: boolean; startType?: string; startParams?: Record<string, unknown>; onFinished?: () => void}> = ({
-	standalone,
-	startType,
-	startParams,
-	onFinished,
-}) => {
+// Jobs read the plan from disk: pending edits are saved first (with a History snapshot).
+export const saveThenStart = async (slug: string, type: string, params: Record<string, unknown> = {}) => {
+	if (editor.get().saveStatus !== 'saved' && editor.get().plan) await api.savePlan(slug, editor.get().plan!, true);
+	return api.startJob(slug, type, params);
+};
+
+export const JobsPanel: React.FC<{
+	standalone?: boolean;
+	startType?: string;
+	startParams?: Record<string, unknown>;
+	onFinished?: () => void;
+	// Only list these job types, without the action buttons (a panel that starts its own jobs).
+	listOnly?: string[];
+}> = ({standalone, startType, startParams, onFinished, listOnly}) => {
 	const derived = useContext(DerivedContext);
 	const slug = derived?.slug ?? decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
 	const [jobs, setJobs] = useState<JobInfo[]>([]);
@@ -395,7 +403,7 @@ export const JobsPanel: React.FC<{standalone?: boolean; startType?: string; star
 		let alive = true;
 		const tick = async () => {
 			try {
-				const list = await api.jobs(slug);
+				const list = (await api.jobs(slug)).filter((j) => !listOnly || listOnly.includes(j.type));
 				if (!alive) return;
 				setJobs(list);
 				for (const j of list) {
@@ -427,8 +435,7 @@ export const JobsPanel: React.FC<{standalone?: boolean; startType?: string; star
 		try {
 			// Jobs read the plan from disk: save pending edits first. An import or a reset replaces the plan: stop saving it.
 			if (ASKS_CUTS.has(type)) editor.set({locked: true, saveStatus: 'saved'});
-			else if (editor.get().saveStatus !== 'saved' && editor.get().plan) await api.savePlan(slug, editor.get().plan!, true);
-			const job = await api.startJob(slug, type, params);
+			const job = ASKS_CUTS.has(type) ? await api.startJob(slug, type, params) : await saveThenStart(slug, type, params);
 			setOpen(job.id);
 		} catch (e) {
 			if (ASKS_CUTS.has(type)) editor.set({locked: false});
@@ -441,7 +448,8 @@ export const JobsPanel: React.FC<{standalone?: boolean; startType?: string; star
 
 	return (
 		<div className="jobs">
-			{types.includes('export') ? <ExportTarget slug={slug} value={exportParams} onChange={setExportParams} /> : null}
+			{types.includes('export') && !listOnly ? <ExportTarget slug={slug} value={exportParams} onChange={setExportParams} /> : null}
+			{listOnly ? null : (
 			<div className="actions">
 				{types.map((t) => {
 					const info = JOB_INFO[t];
@@ -466,6 +474,7 @@ export const JobsPanel: React.FC<{standalone?: boolean; startType?: string; star
 					);
 				})}
 			</div>
+			)}
 			{asking ? (
 				<CutsDialog
 					current={savedCuts?.autoCuts ?? null}
@@ -511,18 +520,21 @@ export const JobsPanel: React.FC<{standalone?: boolean; startType?: string; star
 
 export const HistoryPanel: React.FC = () => {
 	const {slug} = useDerived();
-	const [items, setItems] = useState<{name: string; at: string; size: number}[]>([]);
+	const [items, setItems] = useState<HistoryItem[]>([]);
 	useEffect(() => {
 		api.history(slug).then(setItems).catch(() => {});
 	}, [slug]);
 	return (
 		<div className="history">
-			<p className="muted small">The plan autosaves; a snapshot is kept at most once a minute (and before accepting a draft or exporting). Restoring is undoable.</p>
+			<p className="muted small">The plan autosaves; a snapshot is kept at most once a minute, before exporting, and before accepting a Claude draft when you choose to keep the current version. Restoring is undoable.</p>
 			<button onClick={async () => { await api.savePlan(slug, editor.get().plan!, true); setItems(await api.history(slug)); }}>Snapshot now</button>
 			<ul>
 				{items.map((h) => (
 					<li key={h.name} className="row">
-						<span className="grow small mono">{h.at}</span>
+						<span className="grow small">
+							<span className="mono">{h.at.replace('T', ' ')}</span>
+							{h.label ? <span className="history-label" title={h.label}>{h.label}</span> : null}
+						</span>
 						<button className="small" onClick={async () => {
 							const plan = parsePlan(await api.historyItem(slug, h.name));
 							editor.apply(() => plan);

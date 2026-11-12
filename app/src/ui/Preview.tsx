@@ -17,16 +17,40 @@ export const Preview: React.FC = () => {
 	const [muted, setMuted] = useState(false);
 	const box = useRef<HTMLDivElement>(null);
 	const [width, setWidth] = useState(360);
+	// Bumped to remount the player after it crashed (Remotion keeps showing its error until remounted).
+	const [playerKey, setPlayerKey] = useState(0);
 
 	useEffect(() => {
 		const el = box.current;
 		if (!el) return;
 		const ro = new ResizeObserver(() => {
 			const h = el.clientHeight - 8;
-			setWidth(Math.max(200, Math.min(el.clientWidth - 8, (h * 9) / 16)));
+			setWidth(Math.max(90, Math.min(el.clientWidth - 8, (h * 9) / 16)));
 		});
 		ro.observe(el);
 		return () => ro.disconnect();
+	}, []);
+
+	// The Remotion player moves the focus to its play button by itself (on load, on play/pause), which makes the
+	// browser draw a focus ring on it. Keep that focus only when the user reached the button with Tab.
+	useEffect(() => {
+		const el = box.current;
+		if (!el) return;
+		let tabbing = false;
+		const onKey = (e: KeyboardEvent) => (tabbing = e.key === 'Tab');
+		const onPointer = () => (tabbing = false);
+		const onFocus = (e: FocusEvent) => {
+			if (!tabbing && e.target instanceof HTMLButtonElement) e.target.blur();
+		};
+		window.addEventListener('keydown', onKey, true);
+		window.addEventListener('pointerdown', onPointer, true);
+		el.addEventListener('focusin', onFocus);
+		if (!tabbing && document.activeElement instanceof HTMLButtonElement && el.contains(document.activeElement)) document.activeElement.blur();
+		return () => {
+			window.removeEventListener('keydown', onKey, true);
+			window.removeEventListener('pointerdown', onPointer, true);
+			el.removeEventListener('focusin', onFocus);
+		};
 	}, []);
 
 	useEffect(() => {
@@ -42,7 +66,7 @@ export const Preview: React.FC = () => {
 			p.removeEventListener('frameupdate', onFrame);
 			p.removeEventListener('seeked', onFrame);
 		};
-	}, [edl.fps]);
+	}, [edl.fps, playerKey]);
 
 	const inputProps: MainProps = useMemo(
 		() => ({
@@ -73,7 +97,10 @@ export const Preview: React.FC = () => {
 			<div className="player-box" ref={box}>
 				<div className="player-frame" style={{width, height}}>
 					<Player
+						key={playerKey}
 						ref={ref}
+						initialFrame={Math.min(durationInFrames - 1, Math.round(editor.get().time * edl.fps))}
+						errorFallback={({error}) => <PlayerError error={error} onRetry={() => setPlayerKey((k) => k + 1)} />}
 						component={Main as unknown as React.FC<Record<string, unknown>>}
 						inputProps={inputProps as unknown as Record<string, unknown>}
 						durationInFrames={durationInFrames}
@@ -232,5 +259,20 @@ const DragHandles: React.FC<{scale: number}> = ({scale}) => {
 				<div className="drag-resize" onPointerDown={onDown('resize')} onPointerMove={onMove} onPointerUp={onUp} title="Drag to resize" />
 			</div>
 		</>
+	);
+};
+
+// Shown in place of the video when the player crashed: the real message, and a way back without restarting the app.
+const PlayerError: React.FC<{error: Error; onRetry: () => void}> = ({error, onRetry}) => {
+	useEffect(() => {
+		console.error('[AutoShort] preview player error', error);
+	}, [error]);
+	return (
+		<div className="player-error">
+			<strong>The preview stopped</strong>
+			<span className="small">{error.message || String(error)}</span>
+			<button className="small" onClick={onRetry}>Reload the preview</button>
+			<span className="small muted">Your edit is not affected. If this comes back, send this message with what you were doing.</span>
+		</div>
 	);
 };

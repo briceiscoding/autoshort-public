@@ -6,7 +6,7 @@ export const AUTHOR_LINKS: {brand: Brand; label: string; url: string}[] = [
 	{brand: 'youtube', label: 'YouTube', url: 'https://youtube.com/@briceiscoding'},
 	{brand: 'tiktok', label: 'TikTok', url: 'https://tiktok.com/@briceiscoding'},
 	{brand: 'instagram', label: 'Instagram', url: 'https://instagram.com/briceiscoding'},
-	{brand: 'github', label: 'AutoShort on GitHub', url: 'https://github.com/briceiscoding/autoshort'},
+	{brand: 'github', label: 'AutoShort on GitHub', url: 'https://github.com/briceiscoding/autoshort-public'},
 ];
 
 // Links open in the usual browser (a new window, outside the app window).

@@ -22,6 +22,20 @@ export type VideoState = {
 	folder: string;
 	prepared: {subscribe: string | null; mattes: {file: string; start: number; end: number}[]};
 	notes: string | null;
+	// What produced the waiting draft: the author's feedback, or null for a proposal from scratch.
+	draftRequest: {feedback: string | null; at: number} | null;
+};
+
+export type HistoryItem = {name: string; at: string; size: number; label: string | null};
+
+// How Claude Code is connected (the saved token never comes back, only a masked form).
+export type ClaudeSettings = {
+	installed: boolean;
+	version: string | null;
+	command: string;
+	mode: 'subscription' | 'apiKey' | 'login';
+	token: string | null;
+	systemApiKey: boolean;
 };
 
 export type JobInfo = {
@@ -108,9 +122,14 @@ export const api = {
 			method: 'PUT',
 			body: JSON.stringify(plan),
 		}),
-	history: (slug: string) => request<{name: string; at: string; size: number}[]>(`/api/videos/${encodeURIComponent(slug)}/history`),
+	history: (slug: string) => request<HistoryItem[]>(`/api/videos/${encodeURIComponent(slug)}/history`),
 	historyItem: (slug: string, name: string) => request<Plan>(`/api/videos/${encodeURIComponent(slug)}/history/${encodeURIComponent(name)}`),
-	acceptDraft: (slug: string) => request(`/api/videos/${encodeURIComponent(slug)}/draft/accept`, {method: 'POST'}),
+	// keep: the current plan is saved in History first.
+	acceptDraft: (slug: string, keep = true) => request(`/api/videos/${encodeURIComponent(slug)}/draft/accept?keep=${keep}`, {method: 'POST'}),
+	claudeSettings: () => request<ClaudeSettings>('/api/settings/claude'),
+	// An empty token goes back to the login of the claude command on this computer.
+	saveClaudeToken: (token: string) => request<ClaudeSettings>('/api/settings/claude', {method: 'PUT', body: JSON.stringify({token})}),
+	testClaude: () => request<{ok: boolean; message: string}>('/api/settings/claude/test', {method: 'POST'}),
 	discardDraft: (slug: string) => request(`/api/videos/${encodeURIComponent(slug)}/draft`, {method: 'DELETE'}),
 	sfx: () => request<string[]>('/api/library/sfx'),
 	fonts: () => request<string[]>('/api/library/fonts'),

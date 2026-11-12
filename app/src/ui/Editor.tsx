@@ -14,6 +14,7 @@ import {DerivedContext, fmtTime, player, type Derived} from './context';
 import {FileDrop} from './FileDrop';
 import {editor, useEditor} from './editorStore';
 import {Inspector} from './Inspector';
+import {ClaudePanel} from './Claude';
 import {CatalogPanel, HistoryPanel, JobsPanel, LintPanel, TranscriptPanel} from './Panels';
 import {Preview} from './Preview';
 import {StylesPanel} from './Styles';
@@ -38,7 +39,7 @@ const loadCustomDiagrams = async (slug: string, files: string[]) => {
 	registerCustomDiagrams(entries);
 };
 
-type Tab = 'inspector' | 'styles' | 'lint' | 'transcript' | 'catalog' | 'jobs' | 'history';
+type Tab = 'inspector' | 'styles' | 'claude' | 'lint' | 'transcript' | 'catalog' | 'jobs' | 'history';
 
 export const Editor: React.FC<{slug: string}> = ({slug}) => {
 	const [video, setVideo] = useState<VideoState | null>(null);
@@ -101,7 +102,16 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			const target = e.target;
-			if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]')) return;
+			const typing =
+				target instanceof Element &&
+				target.closest('textarea, select, [contenteditable], input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=color])');
+			if (typing) return;
+			const key = e.key.toLowerCase();
+			const shortcut = key === ' ' || key === 'arrowleft' || key === 'arrowright' || ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'y'));
+			if (!shortcut) return;
+			// The last clicked button or checkbox keeps the focus; a key press would make the browser draw its
+			// keyboard focus ring on it (and Space would press it again). Shortcuts are not aimed at it: drop it.
+			if (document.activeElement instanceof HTMLElement && document.activeElement !== document.body) document.activeElement.blur();
 			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
 				e.preventDefault();
 				editor.undo();
@@ -201,12 +211,12 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 						Export
 					</button>
 				</header>
-				{video.draft ? <DraftBanner slug={slug} onDone={reload} /> : null}
+				{video.draft ? <DraftBanner slug={slug} video={video} onDone={reload} /> : null}
 				<div className="workspace">
 					<section className="preview-col">{customReady ? <Preview /> : <div className="muted">Loading diagrams…</div>}</section>
 					<section className="side-col">
 						<nav className="tabs">
-							{(['inspector', 'styles', 'lint', 'transcript', 'catalog', 'jobs', 'history'] as Tab[]).map((t) => (
+							{(['inspector', 'styles', 'claude', 'lint', 'transcript', 'catalog', 'jobs', 'history'] as Tab[]).map((t) => (
 								<button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
 									{t === 'lint' ? `Checks (${derived.warnings.length})` : t[0].toUpperCase() + t.slice(1)}
 								</button>
@@ -215,6 +225,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 						<div className="tab-body">
 							{tab === 'inspector' ? <Inspector /> : null}
 							{tab === 'styles' ? <StylesPanel /> : null}
+							{tab === 'claude' ? <ClaudePanel /> : null}
 							{tab === 'lint' ? <LintPanel /> : null}
 							{tab === 'transcript' ? <TranscriptPanel /> : null}
 							{tab === 'catalog' ? <CatalogPanel /> : null}
@@ -235,13 +246,62 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 	);
 };
 
-const DraftBanner: React.FC<{slug: string; onDone: () => Promise<void>}> = ({slug, onDone}) => (
-	<div className="draft-banner">
-		A plan draft from Claude is waiting for review. Accepting replaces the current plan (the current one stays in History).
-		<button className="primary" onClick={async () => { await api.acceptDraft(slug); await onDone(); }}>Accept draft</button>
-		<button onClick={async () => { await api.discardDraft(slug); await onDone(); }}>Discard</button>
-	</div>
-);
+// Whether to keep the current version in History when accepting a draft: remembered in this browser.
+const KEEP_KEY = 'autoshort.keepBeforeDraft';
+const readKeep = () => {
+	try {
+		return window.localStorage.getItem(KEEP_KEY) !== '0';
+	} catch {
+		return true;
+	}
+};
+
+const DraftBanner: React.FC<{slug: string; video: VideoState; onDone: () => Promise<void>}> = ({slug, video, onDone}) => {
+	const [keep, setKeep] = useState(readKeep);
+	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState('');
+	const feedback = video.draftRequest?.feedback;
+	const notes = video.draft?.notes?.replace(/^Claude proposal:\s*/, '');
+	const act = async (fn: () => Promise<unknown>) => {
+		setBusy(true);
+		setError('');
+		try {
+			await fn();
+			await onDone();
+		} catch (e) {
+			setError(e instanceof Error ? e.message : String(e));
+		} finally {
+			setBusy(false);
+		}
+	};
+	return (
+		<div className="draft-banner">
+			<div className="draft-text">
+				<strong>{feedback ? 'Claude revised the edit from your feedback.' : 'A plan proposal from Claude is waiting for review.'}</strong>
+				{feedback ? <span className="muted small" title={feedback}>Your feedback: “{feedback}”</span> : null}
+				{notes ? <span className="small" title={notes}>Claude: {notes}</span> : null}
+				{error ? <span className="error small">{error}</span> : null}
+			</div>
+			<label className="check small" title="The current edit is saved in History (named after your feedback) before the draft replaces it">
+				<input
+					type="checkbox"
+					checked={keep}
+					onChange={(e) => {
+						setKeep(e.target.checked);
+						try {
+							window.localStorage.setItem(KEEP_KEY, e.target.checked ? '1' : '0');
+						} catch {
+							/* not remembered */
+						}
+					}}
+				/>
+				Keep the current version in History
+			</label>
+			<button className="primary" disabled={busy} onClick={() => act(() => api.acceptDraft(slug, keep))}>Accept the draft</button>
+			<button disabled={busy} onClick={() => act(() => api.discardDraft(slug))}>Discard</button>
+		</div>
+	);
+};
 
 const SetupJobs: React.FC<{slug: string; video: VideoState; onDone: () => Promise<void>}> = ({slug, video, onDone}) => {
 	const [prompt, setPrompt] = useState('');

@@ -7,7 +7,7 @@ from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
-from . import library as brand_library, store
+from . import library as brand_library, settings, store
 from .config import APP, load_config
 from .jobs import JobManager
 from .lifecycle import Lifecycle
@@ -46,6 +46,27 @@ def client_bye(client: str):
 def config():
     cfg = load_config()
     return {"projectsRoot": str(cfg.projects_root), "libraryRoot": str(cfg.library_root), "jobTypes": sorted(JOB_TYPES)}
+
+
+@app.get("/api/settings/claude")
+def claude_settings():
+    """How Claude Code is connected (the saved token is never sent back, only its kind and a masked form)."""
+    return settings.claude_status()
+
+
+@app.put("/api/settings/claude")
+def put_claude_settings(body: dict = Body(...)):
+    """Save a Claude token on this computer (settings.local.json); an empty token goes back to the CLI's own login."""
+    try:
+        settings.set_claude_token(str(body.get("token") or ""))
+    except settings.SettingsError as err:
+        fail(err)
+    return settings.claude_status()
+
+
+@app.post("/api/settings/claude/test")
+def test_claude_settings():
+    return settings.test_claude()
 
 
 @app.get("/api/videos")
@@ -163,9 +184,10 @@ def history_item(slug: str, name: str):
 
 
 @app.post("/api/videos/{slug}/draft/accept")
-def accept_draft(slug: str):
+def accept_draft(slug: str, keep: bool = True):
+    """Replace the plan with Claude's draft; keep=true first saves the current plan in History."""
     try:
-        return store.accept_draft(slug)
+        return store.accept_draft(slug, keep)
     except store.StoreError as err:
         fail(err)
 

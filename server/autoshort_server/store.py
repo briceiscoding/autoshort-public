@@ -22,6 +22,7 @@ from .models import Plan
 
 HISTORY_EVERY_S = 60.0
 HISTORY_KEEP = 300
+LABELS_FILE = "labels.json"  # history/labels.json: snapshot file name -> what it was (e.g. before a Claude draft)
 READ_ONLY_DIRS = ("rush", "assets")
 PROJECT_DIRS = ("rush", "assets", DIAGRAMS_DIR_NAME, APP_DIR_NAME, EXPORTS_DIR_NAME)
 VIDEO_EXTENSIONS = (".mp4", ".mov", ".mkv", ".m4v", ".webm")
@@ -168,10 +169,13 @@ def video_state(slug: str) -> dict:
         },
         "notes": (video / "assets" / "notes.md").read_text(encoding="utf-8", errors="replace")
         if (video / "assets" / "notes.md").exists() else None,
+        "draftRequest": read_json(cache / "draft_request.json") if (app / "plan.draft.json").exists() else None,
     }
 
 
-def save_plan(slug: str, data: dict, snapshot: bool = False) -> dict:
+def save_plan(slug: str, data: dict, snapshot: bool = False, label: str = "", auto_snapshot: bool = True) -> dict:
+    """Write plan.json. The previous plan goes to History when snapshot is asked, or at most once a minute
+    (auto_snapshot); label names that snapshot in the History list."""
     errors = validate_plan(data)
     if errors:
         raise StoreError("invalid plan: " + "; ".join(errors))
@@ -182,20 +186,30 @@ def save_plan(slug: str, data: dict, snapshot: bool = False) -> dict:
     history.mkdir(exist_ok=True)
     snapshots = sorted(history.glob("plan_*.json"))
     last = snapshots[-1].stat().st_mtime if snapshots else 0
-    if target.exists() and (snapshot or time.time() - last > HISTORY_EVERY_S):
+    if target.exists() and (snapshot or (auto_snapshot and time.time() - last > HISTORY_EVERY_S)):
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")[:-3]
-        (history / f"plan_{stamp}.json").write_bytes(target.read_bytes())
+        name = f"plan_{stamp}.json"
+        (history / name).write_bytes(target.read_bytes())
+        labels = read_json(history / LABELS_FILE) or {}
+        if label:
+            labels[name] = label[:200]
         for old in snapshots[:-HISTORY_KEEP]:
+            labels.pop(old.name, None)
             old.unlink()
+        if label or len(snapshots) > HISTORY_KEEP:
+            write_json_atomic(history / LABELS_FILE, labels)
     write_json_atomic(target, data)
     return {"ok": True, "savedAt": datetime.now().isoformat(timespec="seconds")}
 
 
 def list_history(slug: str) -> list[dict]:
     history = app_dir(slug) / "history"
-    return [{"name": f.name, "size": f.stat().st_size,
+    if not history.is_dir():
+        return []
+    labels = read_json(history / LABELS_FILE) or {}
+    return [{"name": f.name, "size": f.stat().st_size, "label": labels.get(f.name),
              "at": datetime.fromtimestamp(f.stat().st_mtime).isoformat(timespec="seconds")}
-            for f in sorted(history.glob("plan_*.json"), reverse=True)] if history.is_dir() else []
+            for f in sorted(history.glob("plan_*.json"), reverse=True)]
 
 
 def read_history(slug: str, name: str) -> dict:
@@ -206,12 +220,16 @@ def read_history(slug: str, name: str) -> dict:
     return data
 
 
-def accept_draft(slug: str) -> dict:
+def accept_draft(slug: str, keep: bool = True) -> dict:
+    """Replace the plan with the draft. keep: the current plan is first saved in History, named after the
+    feedback that produced the draft; without it the current plan is replaced without a snapshot."""
     app = app_dir(slug)
     draft = read_json(app / "plan.draft.json")
     if draft is None:
         raise StoreError("no draft")
-    result = save_plan(slug, draft, snapshot=True)
+    feedback = (read_json(app / "cache" / "draft_request.json") or {}).get("feedback")
+    label = f"Before Claude: {feedback}" if feedback else "Before the Claude proposal"
+    result = save_plan(slug, draft, snapshot=keep, label=label if keep else "", auto_snapshot=keep)
     (app / "plan.draft.json").unlink()
     return result
 

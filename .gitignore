@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 dist/
 config.local.json
+settings.local.json
 .pytest_cache/
 app/src/composition/custom/registry.generated.ts
 render-bundle/

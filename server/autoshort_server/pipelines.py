@@ -7,10 +7,12 @@
 import json
 import shutil
 import sys
+import time
 from pathlib import Path
 
 from .config import APP, APP_DIR_NAME, SCHEMA_DIR, SERVER, THEME_FILE, load_config
 from .jobs import Step
+from .settings import claude_env
 from .store import read_json, video_dir
 
 JOBS_DIR = SERVER / "jobs"
@@ -132,9 +134,17 @@ def preview_steps(slug: str, params: dict) -> list[Step]:
 
 
 def propose_steps(slug: str, params: dict) -> list[Step]:
+    """A Claude proposal, from scratch or, with params feedback, a revision of the current edit following the
+    author's feedback. The request is kept in data/cache/draft_request.json (it names the History snapshot)."""
     video = video_dir(slug)
-    return [Step("Plan proposal (Claude headless)",
-                 app_py("propose_plan.py", str(video), str(THEME_FILE), str(SCHEMA_DIR), load_config().claude_command))]
+    feedback = str(params.get("feedback") or "").strip()[:4000]
+    request = video / APP_DIR_NAME / "cache" / "draft_request.json"
+    request.parent.mkdir(parents=True, exist_ok=True)
+    request.write_text(json.dumps({"feedback": feedback or None, "at": time.time()}, ensure_ascii=False), encoding="utf-8")
+    return [Step("Revision from your feedback (Claude headless)" if feedback else "Plan proposal (Claude headless)",
+                 app_py("propose_plan.py", str(video), str(THEME_FILE), str(SCHEMA_DIR), load_config().claude_command,
+                        *(["--feedback-file", str(request)] if feedback else [])),
+                 env=claude_env())]
 
 
 def export_steps(slug: str, params: dict) -> list[Step]:

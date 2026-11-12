@@ -133,6 +133,14 @@ export const SchemaImage: React.FC<{src: string; x: number; y: number; size: num
 	);
 };
 
+// A label may hold line breaks (Enter in the Inspector); each line is measured on its own.
+const LINE_HEIGHT = 1.05;
+const LABEL_MARGIN = 40;
+export const labelLines = (text: string): string[] => {
+	const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+	return lines.length ? lines : [''];
+};
+
 export const Label: React.FC<{
 	x: number;
 	y: number;
@@ -144,8 +152,13 @@ export const Label: React.FC<{
 }> = ({x, y, text, start, size = 60, color, anchor = 'middle'}) => {
 	const theme = useTheme();
 	const frame = useCurrentFrame();
-	const {fps} = useVideoConfig();
+	const {fps, width} = useVideoConfig();
 	const opacity = interpolate(frame / fps, [start, start + TEXT_FADE_S], [0, 1], clamp);
+	const lines = labelLines(text);
+	// Never past the frame: the widest line shrinks the text to the room left on its side of the anchor.
+	const room = anchor === 'start' ? width - LABEL_MARGIN - x : anchor === 'end' ? x - LABEL_MARGIN : 2 * Math.min(x - LABEL_MARGIN, width - LABEL_MARGIN - x);
+	const widest = Math.max(0, ...lines.map((l) => measureText(l.toUpperCase(), `${size}px ${theme.fonts.display.family}`)));
+	const fitted = widest > room && room > 0 ? Math.max(20, Math.floor((size * room) / widest)) : size;
 	return (
 		<text
 			x={x}
@@ -153,12 +166,18 @@ export const Label: React.FC<{
 			fill={color ?? theme.colors.cream}
 			opacity={opacity}
 			fontFamily={theme.fonts.display.family}
-			fontSize={size}
+			fontSize={fitted}
 			style={{textTransform: 'uppercase'}}
 			textAnchor={anchor}
 			dominantBaseline="central"
 		>
-			{text}
+			{lines.length === 1
+				? lines[0]
+				: lines.map((line, i) => (
+						<tspan key={i} x={x} dy={i === 0 ? -((lines.length - 1) / 2) * fitted * LINE_HEIGHT : fitted * LINE_HEIGHT}>
+							{line}
+						</tspan>
+					))}
 		</text>
 	);
 };
@@ -190,11 +209,12 @@ export const stickerFit = (
 	const iconSpace = opts.iconSpace ?? 0;
 	const canvasWidth = opts.canvasWidth ?? 1080;
 	const maxW = Math.min(opts.maxW ?? Infinity, canvasWidth - 2 * CANVAS_MARGIN);
-	const textW = label ? measureText(label.toUpperCase(), `${size}px ${family}`) : 0;
+	const lines = labelLines(label);
+	const textW = label ? Math.max(...lines.map((l) => measureText(l.toUpperCase(), `${size}px ${family}`))) : 0;
 	const need = textW + 2 * STICKER_PAD_X + iconSpace;
 	const w = Math.max(box.w, Math.min(need, maxW));
 	const fitted = need > w && textW > 0 ? Math.floor((size * (w - 2 * STICKER_PAD_X - iconSpace)) / textW) : size;
-	const h = Math.max(box.h, Math.round(fitted + 2 * STICKER_PAD_Y));
+	const h = Math.max(box.h, Math.round(fitted * (1 + (lines.length - 1) * LINE_HEIGHT) + 2 * STICKER_PAD_Y));
 	const cx = box.x + box.w / 2;
 	const x = Math.min(Math.max(cx - w / 2, CANVAS_MARGIN), canvasWidth - CANVAS_MARGIN - w);
 	const y = box.y + box.h / 2 - h / 2;

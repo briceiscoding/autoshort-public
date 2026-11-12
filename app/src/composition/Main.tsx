@@ -6,7 +6,7 @@ import type {Edl, EdlSegment, EdlSfx} from '../edl/types';
 import type {Analysis} from '../model/analysis';
 import {faceAt} from '../model/analysis';
 import {fontFamilyOf, themeFontFiles, type Theme} from '../model/theme';
-import {CutInLayer, LogoLayer} from './AssetLayer';
+import {CutInLayer, LogoLayer, SubscribeLayer} from './AssetLayer';
 import {Captions} from './Captions';
 import {ConceptText} from './ConceptText';
 import {CompositionProvider, mediaUrl, useLibraryUrl, useTheme, useVideoUrl, type MediaConfig} from './context';
@@ -264,19 +264,7 @@ const Layers: React.FC<MainProps> = ({edl, audio, subscribeFile, mattes, overlay
 
 			{edl.overlaySubscribe && subscribeFile ? (
 				<Sequence {...span(edl.overlaySubscribe.start, edl.overlaySubscribe.end)}>
-					<OffthreadVideo
-						src={video(subscribeFile)}
-						transparent
-						muted
-						style={{
-							position: 'absolute',
-							left: edl.overlaySubscribe.x,
-							top: edl.overlaySubscribe.y,
-							width: edl.width * edl.overlaySubscribe.scale,
-							height: edl.height * edl.overlaySubscribe.scale,
-							maxWidth: 'none',
-						}}
-					/>
+					<SubscribeLayer overlay={edl.overlaySubscribe} src={video(subscribeFile)} />
 				</Sequence>
 			) : null}
 

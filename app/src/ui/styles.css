@@ -480,3 +480,6 @@ code { background: var(--panel2); padding: 0 4px; border-radius: 4px; font-size:
 .drag-rotate { position: absolute; left: 50%; top: -30px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #fff; border: 2px solid var(--blue); cursor: grab; touch-action: none; }
 .drag-rotate::after { content: ''; position: absolute; left: 50%; top: 14px; width: 2px; height: 12px; margin-left: -1px; background: var(--blue); }
 .drag-rotate:active { cursor: grabbing; }
+
+/* diagram element label: a small textarea (Enter = new line) */
+.label-input { resize: vertical; font: inherit; min-height: 32px; }

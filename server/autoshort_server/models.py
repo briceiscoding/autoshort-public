@@ -143,6 +143,9 @@ class Subscribe(Strict):
     x: float
     y: float
     keyColor: str
+    enter: Optional[Literal["pop", "top", "bottom", "left", "right"]] = None
+    rotate: Optional[float] = Field(default=None, ge=-360, le=360)
+    shake: Optional[float] = None
 
 
 class Crop(Strict):

@@ -140,6 +140,9 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 				if (sel && 'id' in sel && DELETABLE.has(sel.kind)) {
 					editor.apply((p) => removeEvent(p, sel.kind as EventKind, sel.id));
 					editor.select(null);
+				} else if (sel?.kind === 'subscribe') {
+					editor.apply((p) => ({...p, subscribe: null}));
+					editor.select(null);
 				}
 			} else if (e.key === 'Home' || e.key === 'End') {
 				e.preventDefault();

@@ -1,7 +1,7 @@
 // Port of engine/src/AssetLayer.tsx: full, screen and bg cut-ins, logos.
 import React from 'react';
 import {AbsoluteFill, Easing, Img, OffthreadVideo, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
-import type {EdlAsset, EdlLogo} from '../edl/types';
+import type {EdlAsset, EdlLogo, EdlOverlay} from '../edl/types';
 import {frameCss} from '../model/theme';
 import {useTheme, useVideoUrl} from './context';
 import {bgRect, fullRect, logoRect, screenRect} from './geometry';
@@ -128,6 +128,38 @@ export const CutInLayer: React.FC<{asset: EdlAsset}> = ({asset}) => {
 				</AbsoluteFill>
 			</AbsoluteFill>
 			{asset.dim ? <AbsoluteFill style={{backgroundColor: `rgba(0,0,0,${asset.dim})`}} /> : null}
+		</AbsoluteFill>
+	);
+};
+
+// Subscribe reminder (a keyed video over the frame): placed, scaled, turned and brought in like a picture.
+export const SubscribeLayer: React.FC<{overlay: EdlOverlay; src: string}> = ({overlay, src}) => {
+	const frame = useCurrentFrame();
+	const {fps, width, height} = useVideoConfig();
+	const time = frame / fps;
+	const w = width * overlay.scale;
+	const h = height * overlay.scale;
+	const centre = {x: overlay.x + w / 2, y: overlay.y + h / 2};
+	const motion = enterMotion(overlay.enter, time, centre, {width, height});
+	const shake = overlay.shake ?? 0;
+	const turn = `${overlay.rotate ? `rotate(${overlay.rotate}deg) ` : ''}${shake > 0 ? shakeTransform(time, shake) : ''}`.trim();
+	return (
+		<AbsoluteFill style={motion}>
+			<OffthreadVideo
+				src={src}
+				transparent
+				muted
+				style={{
+					position: 'absolute',
+					left: overlay.x,
+					top: overlay.y,
+					width: w,
+					height: h,
+					maxWidth: 'none',
+					transform: turn || undefined,
+					transformOrigin: 'center center',
+				}}
+			/>
 		</AbsoluteFill>
 	);
 };

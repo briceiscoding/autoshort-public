@@ -469,7 +469,7 @@ const DiagramInspector: React.FC<{diagram: Diagram}> = ({diagram}) => {
 			<TimeFields kind="diagram" id={diagram.id} start={diagram.start} end={diagram.end} />
 			<Check label="Whoosh on opening + bloop per element" value={diagram.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<h4>Elements <span className="muted small">(each appears on its trigger word)</span></h4>
-			<datalist id="icon-names">{ICON_LIST.map((n) => <option key={n} value={n} />)}</datalist>
+			<datalist id="icon-names">{[...new Set(ICON_LIST)].map((n) => <option key={n} value={n} />)}</datalist>
 			{diagram.elements.map((el, i) => (
 				<div key={el.id} className="element-card">
 					<div className="row">
@@ -480,8 +480,8 @@ const DiagramInspector: React.FC<{diagram: Diagram}> = ({diagram}) => {
 					</div>
 					<div className="row">
 						<label className="field grow">
-							<span>Label</span>
-							<input value={el.label} onChange={(e) => setEl(el, {label: e.target.value})} />
+							<span>Label (Enter = new line)</span>
+							<textarea className="label-input" rows={Math.min(4, el.label.split('\n').length)} value={el.label} onChange={(e) => setEl(el, {label: e.target.value})} />
 						</label>
 						<label className="field">
 							<span>Icon</span>
@@ -623,7 +623,23 @@ const SubscribeInspector: React.FC = () => {
 				<Num label="x" value={sub.x} step={1} onChange={(v) => v !== undefined && set({x: v})} />
 				<Num label="y" value={sub.y} step={1} onChange={(v) => v !== undefined && set({y: v})} />
 			</div>
-			<p className="muted small">Only when a call to action is said. It runs until the end of the video.</p>
+			<label className="field">
+				<span>Entrance</span>
+				<select value={sub.enter ?? ''} onChange={(e) => set({enter: (e.target.value || undefined) as typeof sub.enter})}>
+					<option value="">Default (the animation plays as it is)</option>
+					<option value="pop">Pop (grows with a bounce)</option>
+					<option value="top">From the top</option>
+					<option value="bottom">From the bottom</option>
+					<option value="left">From the left</option>
+					<option value="right">From the right</option>
+				</select>
+			</label>
+			<Range label="Rotation (°)" value={sub.rotate ?? 0} min={-180} max={180} step={1} onChange={(v) => set({rotate: v || undefined})} />
+			<Range label="Shake (px)" value={sub.shake ?? 0} min={0} max={20} step={1} onChange={(v) => set({shake: v || undefined})} />
+			<p className="muted small">
+				On the preview (from its start time): drag it to move it, its corner or the mouse wheel to resize, the round handle to turn it. Delete or
+				Backspace removes it. It shows only when a call to action is said and runs until the end of the video.
+			</p>
 			<button className="danger" onClick={() => { apply((p) => ({...p, subscribe: null})); editor.select(null); }}>Remove</button>
 		</div>
 	);

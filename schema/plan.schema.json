@@ -966,6 +966,25 @@
             },
             "keyColor": {
               "type": "string"
+            },
+            "enter": {
+              "type": "string",
+              "enum": [
+                "pop",
+                "top",
+                "bottom",
+                "left",
+                "right"
+              ]
+            },
+            "rotate": {
+              "type": "number",
+              "minimum": -360,
+              "maximum": 360
+            },
+            "shake": {
+              "type": "number",
+              "minimum": 0
             }
           },
           "required": [

@@ -234,6 +234,9 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 				x: plan.subscribe.x,
 				y: plan.subscribe.y,
 				keyColor: plan.subscribe.keyColor,
+				...(plan.subscribe.enter ? {enter: plan.subscribe.enter} : {}),
+				...(plan.subscribe.rotate ? {rotate: plan.subscribe.rotate} : {}),
+				...(plan.subscribe.shake ? {shake: plan.subscribe.shake} : {}),
 			}
 		: null;
 

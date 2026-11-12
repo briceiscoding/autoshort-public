@@ -127,6 +127,9 @@ export type EdlOverlay = {
 	x: number;
 	y: number;
 	keyColor: string;
+	enter?: 'pop' | 'top' | 'bottom' | 'left' | 'right';
+	rotate?: number;
+	shake?: number;
 };
 
 export type Edl = {

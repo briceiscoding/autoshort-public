@@ -206,9 +206,14 @@ export const SubscribeSchema = z
 		start: Seconds,
 		trigger: z.string().optional(),
 		scale: z.number().positive(),
+		// Top-left corner of the overlay video (canvas px); its size is the canvas times scale.
 		x: z.number(),
 		y: z.number(),
 		keyColor: z.string(),
+		// Like pictures: entrance (absent = plays as it comes), rotation in degrees, trembling strength in px.
+		enter: z.enum(['pop', 'top', 'bottom', 'left', 'right']).optional(),
+		rotate: z.number().min(-360).max(360).optional(),
+		shake: z.number().min(0).optional(),
 	})
 	.strict();
 

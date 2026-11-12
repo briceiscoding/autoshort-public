@@ -290,7 +290,7 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
     plan["diagrams"] = diagrams
     sub = get(p["subscribeWord"]) if p.get("subscribeWord") else None
     if sub:
-        base = plan.get("subscribe") or {"scale": 0.33, "x": 332, "y": -72, "keyColor": "0x00983B"}
+        base = plan.get("subscribe") or {"scale": 0.33, "x": 332, "y": -72, "keyColor": "0x00983B"}  # keeps rotate / enter / shake
         plan["subscribe"] = {**base, "start": sub["start"], "trigger": sub["id"]}
     elif p.get("subscribeWord") is None:
         plan["subscribe"] = None

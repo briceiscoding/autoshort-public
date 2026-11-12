@@ -102,6 +102,23 @@ const SegmentVideo: React.FC<{segment: EdlSegment; src: string; crop: Edl['crop'
 	);
 };
 
+// A sound effect without a set duration plays at most this long. Without a bound its audio tag stayed mounted until the
+// end of the video: past 16 of them the preview player crashed ("Tried to simultaneously mount 17 <Html5Audio /> tags").
+export const SFX_MAX_S = 6;
+
+// Peak number of sound effects playing at once (+ voice and music), for the player's shared audio tags.
+export const peakAudioTags = (sfx: {time: number; duration?: number}[]): number => {
+	const edges = sfx.flatMap((s) => [
+		{t: s.time, d: 1},
+		{t: s.time + (s.duration ?? SFX_MAX_S), d: -1},
+	]);
+	edges.sort((a, b) => a.t - b.t || a.d - b.d);
+	let now = 0;
+	let peak = 0;
+	for (const e of edges) peak = Math.max(peak, (now += e.d));
+	return peak + 2;
+};
+
 // Pencil and keyboard sources are long loops: each use starts further in, so repeats differ.
 const sfxOffsetSeconds = (file: string, index: number): number => {
 	if (file.startsWith('pencil')) return 2 + (index % 8) * 3;
@@ -271,7 +288,7 @@ const Layers: React.FC<MainProps> = ({edl, audio, subscribeFile, mattes, overlay
 						<Sequence
 							key={`${sfx.time}-${sfx.file}-${sfx.reason}-${index}`}
 							from={toFrame(sfx.time)}
-							durationInFrames={sfx.duration ? Math.max(1, toFrame(sfx.duration)) : undefined}
+							durationInFrames={Math.max(1, toFrame(sfx.duration ?? SFX_MAX_S))}
 							layout="none"
 						>
 							<SfxClip

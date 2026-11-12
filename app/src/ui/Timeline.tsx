@@ -1,8 +1,9 @@
 // Timeline in OUTPUT time: one track per event type, drag to move, drag edges to resize.
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import type {EdlSegment} from '../edl/types';
 import {fmtTime, player, useDerived} from './context';
 import {editor, useEditor, type Selection} from './editorStore';
+import {Icon} from './icons';
 import {moveEvent, moveSfx, type EventKind} from './ops';
 
 type Bar = {
@@ -27,10 +28,40 @@ export const Timeline: React.FC = () => {
 	const width = Math.max(600, edl.durationAfter * pps + 40);
 	const x = (t: number) => t * pps;
 
-	const seekFromEvent = (e: React.PointerEvent | React.MouseEvent) => {
-		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		player.seek(Math.max(0, Math.min(edl.durationAfter, (e.clientX - rect.left) / pps)));
+	const clampTime = (t: number) => Math.max(0, Math.min(edl.durationAfter, t));
+	// Scrubbing: press on the ruler, a track background or the playhead handle, then drag; the video pauses meanwhile.
+	const scrubbing = useRef<{left: number} | null>(null);
+	const startScrub = (e: React.PointerEvent, left: number) => {
+		if (e.button !== 0) return;
+		e.stopPropagation();
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+		if (player.isPlaying()) player.toggle();
+		scrubbing.current = {left};
+		player.seek(clampTime((e.clientX - left) / pps));
 	};
+	const scrubMove = (e: React.PointerEvent) => {
+		if (scrubbing.current) player.seek(clampTime((e.clientX - scrubbing.current.left) / pps));
+	};
+	const scrubEnd = () => {
+		scrubbing.current = null;
+	};
+	// Props for a track or the ruler: press anywhere on its background to seek, keep the button down to scrub.
+	const scrub = {
+		onPointerDown: (e: React.PointerEvent) => startScrub(e, (e.currentTarget as HTMLElement).getBoundingClientRect().left),
+		onPointerMove: scrubMove,
+		onPointerUp: scrubEnd,
+		onPointerCancel: scrubEnd,
+	};
+	const inner = useRef<HTMLDivElement>(null);
+
+	// Keep the playhead in view (playing, going back to the start, a check clicked far away), not while scrubbing.
+	useEffect(() => {
+		const el = scroller.current;
+		if (!el || scrubbing.current) return;
+		const pos = x(time);
+		const visible = el.clientWidth - LABEL_W;
+		if (pos < el.scrollLeft + 8 || pos > el.scrollLeft + visible - 24) el.scrollLeft = Math.max(0, pos - (pos < el.scrollLeft ? 40 : visible * 0.25));
+	}, [time, pps]);
 
 	const isSel = (kind: string, id: string) => selection && 'id' in selection && selection.kind === kind && selection.id === id;
 
@@ -64,17 +95,25 @@ export const Timeline: React.FC = () => {
 	return (
 		<div className="timeline">
 			<div className="timeline-tools">
-				<button onClick={() => player.toggle()}>⏯</button>
+				<button className="icon-btn" onClick={() => player.seek(0)} title="Back to the start (Home)" aria-label="Back to the start">
+					<Icon name="start" />
+				</button>
+				<button className="icon-btn" onClick={() => player.toggle()} title="Play / pause (Space)" aria-label="Play or pause">
+					<Icon name={player.isPlaying() ? 'pause' : 'play'} />
+				</button>
+				<button className="icon-btn" onClick={() => player.seek(player.duration())} title="Go to the end (End)" aria-label="Go to the end">
+					<Icon name="end" />
+				</button>
 				<span className="mono">{fmtTime(time)}</span>
 				<label className="small">
 					Zoom <input type="range" min={8} max={160} value={pps} onChange={(e) => setPps(Number(e.target.value))} />
 				</label>
-				<span className="muted small">Click a track background to seek · drag bars to move · drag their edges to resize · red ticks are cuts</span>
+				<span className="muted small">Click or drag the ruler / the playhead to move in time · drag bars to move · drag their edges to resize · red ticks are cuts</span>
 			</div>
 			<div className="timeline-scroll" ref={scroller}>
-				<div className="timeline-inner" style={{width: width + LABEL_W}}>
+				<div className="timeline-inner" ref={inner} style={{width: width + LABEL_W}}>
 					<Row label="Time">
-						<div className="ruler" style={{width}} onPointerDown={seekFromEvent}>
+						<div className="ruler" style={{width}} {...scrub}>
 							{Array.from({length: Math.ceil(edl.durationAfter) + 1}, (_, s) =>
 								s % (pps < 14 ? 5 : pps < 40 ? 2 : 1) === 0 ? (
 									<span key={s} className="tick" style={{left: x(s)}}>
@@ -99,7 +138,7 @@ export const Timeline: React.FC = () => {
 						</div>
 					</Row>
 					<Row label="Segments">
-						<div className="track" style={{width}} onPointerDown={seekFromEvent}>
+						<div className="track" style={{width}} {...scrub}>
 							{edl.segments.map((s) => (
 								<SegmentBlock key={s.id} segment={s} x={x} selected={Boolean(isSel('span', s.id))} />
 							))}
@@ -119,7 +158,7 @@ export const Timeline: React.FC = () => {
 						</div>
 					</Row>
 					<Row label="Captions">
-						<div className="track captions-track" style={{width}} onPointerDown={seekFromEvent}>
+						<div className="track captions-track" style={{width}} {...scrub}>
 							{edl.captions.map((b) => (
 								<span
 									key={b.words[0].id}
@@ -139,7 +178,7 @@ export const Timeline: React.FC = () => {
 					</Row>
 					{Object.entries(bars).map(([label, list]) => (
 						<Row key={label} label={label}>
-							<div className="track" style={{width}} onPointerDown={seekFromEvent}>
+							<div className="track" style={{width}} {...scrub}>
 								{list.map((bar) => (
 									<DraggableBar key={bar.key} bar={bar} pps={pps} selected={Boolean(isSel(bar.kind, bar.id))} />
 								))}
@@ -147,7 +186,7 @@ export const Timeline: React.FC = () => {
 						</Row>
 					))}
 					<Row label="SFX">
-						<div className="track sfx-track" style={{width}} onPointerDown={seekFromEvent}>
+						<div className="track sfx-track" style={{width}} {...scrub}>
 							{edl.sfx.map((s, i) => {
 								const manual = plan.sfx.find((m) => m.id === s.ref);
 								const sel: Selection = manual ? {kind: 'sfx', id: manual.id} : {kind: 'autoSfx', index: i};
@@ -159,7 +198,7 @@ export const Timeline: React.FC = () => {
 						</div>
 					</Row>
 					<Row label="Music">
-						<div className="track" style={{width}} onPointerDown={seekFromEvent}>
+						<div className="track" style={{width}} {...scrub}>
 							{edl.music ? (
 								<span className={`bar music ${selection?.kind === 'music' ? 'selected' : ''}`} style={{left: 0, width: x(edl.durationAfter)}}
 									onPointerDown={(e) => { e.stopPropagation(); editor.select({kind: 'music'}); }}>
@@ -169,7 +208,7 @@ export const Timeline: React.FC = () => {
 						</div>
 					</Row>
 					<Row label="Overlay">
-						<div className="track" style={{width}} onPointerDown={seekFromEvent}>
+						<div className="track" style={{width}} {...scrub}>
 							{edl.overlaySubscribe ? (
 								<span className={`bar overlay ${selection?.kind === 'subscribe' ? 'selected' : ''}`}
 									style={{left: x(edl.overlaySubscribe.start), width: x(edl.overlaySubscribe.end - edl.overlaySubscribe.start)}}
@@ -179,7 +218,16 @@ export const Timeline: React.FC = () => {
 							) : null}
 						</div>
 					</Row>
-					<div className="playhead" style={{left: LABEL_W + x(time)}} />
+					<div className="playhead" style={{left: LABEL_W + x(time)}}>
+						<div
+							className="playhead-handle"
+							title="Drag to move in time"
+							onPointerDown={(e) => startScrub(e, (inner.current?.getBoundingClientRect().left ?? 0) + LABEL_W)}
+							onPointerMove={scrubMove}
+							onPointerUp={scrubEnd}
+							onPointerCancel={scrubEnd}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -34,6 +34,8 @@ export const player = {
 	seek: (_seconds: number) => {},
 	toggle: () => {},
 	isPlaying: () => false,
+	// Output duration in seconds (for "go to the end").
+	duration: () => 0,
 };
 
 export const fmtTime = (t: number): string => {

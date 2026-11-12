@@ -3,7 +3,7 @@ import {Player, type PlayerRef} from '@remotion/player';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {activeBlock, layoutBlock} from '../composition/Captions';
 import {bgRect, captionRect, conceptRect, fullRect, logoRect, screenRect, snapToCenter, type Rect} from '../composition/geometry';
-import {Main, type MainProps} from '../composition/Main';
+import {Main, peakAudioTags, type MainProps} from '../composition/Main';
 import {round3} from '../edl/time';
 import type {CutIn, Logo, Plan} from '../model/plan';
 import {player, useDerived} from './context';
@@ -19,6 +19,9 @@ export const Preview: React.FC = () => {
 	const [width, setWidth] = useState(360);
 	// Bumped to remount the player after it crashed (Remotion keeps showing its error until remounted).
 	const [playerKey, setPlayerKey] = useState(0);
+	const durationRef = useRef(1);
+	// Enough shared audio tags for the busiest moment; a change remounts the player (the prop is read once).
+	const audioTags = Math.max(16, peakAudioTags(edl.sfx) + 4);
 
 	useEffect(() => {
 		const el = box.current;
@@ -59,14 +62,15 @@ export const Preview: React.FC = () => {
 		const onFrame = (e: {detail: {frame: number}}) => editor.set({time: e.detail.frame / edl.fps});
 		p.addEventListener('frameupdate', onFrame);
 		p.addEventListener('seeked', onFrame);
-		player.seek = (t) => p.seekTo(Math.round(t * edl.fps));
+		player.seek = (t) => p.seekTo(Math.max(0, Math.min(durationRef.current - 1, Math.round(t * edl.fps))));
 		player.toggle = () => p.toggle();
 		player.isPlaying = () => p.isPlaying();
+		player.duration = () => Math.max(0, (durationRef.current - 1) / edl.fps);
 		return () => {
 			p.removeEventListener('frameupdate', onFrame);
 			p.removeEventListener('seeked', onFrame);
 		};
-	}, [edl.fps, playerKey]);
+	}, [edl.fps, playerKey, audioTags]);
 
 	const inputProps: MainProps = useMemo(
 		() => ({
@@ -83,6 +87,7 @@ export const Preview: React.FC = () => {
 	);
 
 	const durationInFrames = Math.max(1, Math.round(edl.durationAfter * edl.fps));
+	durationRef.current = durationInFrames;
 	const height = (width * 16) / 9;
 
 	return (
@@ -97,7 +102,7 @@ export const Preview: React.FC = () => {
 			<div className="player-box" ref={box}>
 				<div className="player-frame" style={{width, height}}>
 					<Player
-						key={playerKey}
+						key={`${playerKey}-${audioTags}`}
 						ref={ref}
 						initialFrame={Math.min(durationInFrames - 1, Math.round(editor.get().time * edl.fps))}
 						errorFallback={({error}) => <PlayerError error={error} onRetry={() => setPlayerKey((k) => k + 1)} />}
@@ -112,8 +117,8 @@ export const Preview: React.FC = () => {
 						clickToPlay={false}
 						doubleClickToFullscreen
 						acknowledgeRemotionLicense
-						// Diagram elements, logos and concepts can stack several SFX at once (default limit: 5).
-						numberOfSharedAudioTags={16}
+						// Diagram elements, logos and concepts stack several SFX at once (Remotion's default limit: 5).
+						numberOfSharedAudioTags={audioTags}
 					/>
 					<DragHandles scale={width / edl.width} />
 				</div>

@@ -107,7 +107,8 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 				target.closest('textarea, select, [contenteditable], input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=color])');
 			if (typing) return;
 			const key = e.key.toLowerCase();
-			const shortcut = key === ' ' || key === 'arrowleft' || key === 'arrowright' || ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'y'));
+			const shortcut =
+				key === ' ' || key === 'arrowleft' || key === 'arrowright' || key === 'home' || key === 'end' || ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'y'));
 			if (!shortcut) return;
 			// The last clicked button or checkbox keeps the focus; a key press would make the browser draw its
 			// keyboard focus ring on it (and Space would press it again). Shortcuts are not aimed at it: drop it.
@@ -121,6 +122,9 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 			} else if (e.key === ' ') {
 				e.preventDefault();
 				player.toggle();
+			} else if (e.key === 'Home' || e.key === 'End') {
+				e.preventDefault();
+				player.seek(e.key === 'Home' ? 0 : player.duration());
 			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
 				const step = e.shiftKey ? 1 : 1 / 30;
 				player.seek(Math.max(0, editor.get().time + (e.key === 'ArrowLeft' ? -step : step)));
@@ -237,7 +241,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 				<Timeline />
 				<footer className="statusbar muted small">
 					<span className="grow" style={{whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
-						Space play/pause · ←/→ frame (Shift: 1 s) · Ctrl+Z / Ctrl+Y · playhead {fmtTime(editor.get().time)}
+						Space play/pause · ←/→ frame (Shift: 1 s) · Home / End · Ctrl+Z / Ctrl+Y · playhead {fmtTime(editor.get().time)}
 					</span>
 					<SocialLinks size={14} />
 				</footer>

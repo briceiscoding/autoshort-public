@@ -464,3 +464,13 @@ code { background: var(--panel2); padding: 0 4px; border-radius: 4px; font-size:
 	.home-header .btn-label { display: none; }
 	.settings-token { flex-wrap: wrap; }
 }
+
+/* timeline: playhead handle (drag to scrub), transport buttons */
+.playhead-handle { position: absolute; top: 0; left: -7px; width: 16px; height: 20px; pointer-events: auto; cursor: ew-resize; touch-action: none; }
+.playhead-handle::before { content: ''; position: absolute; left: 1px; top: 0; width: 14px; height: 12px; background: var(--accent); border-radius: 3px 3px 0 0; }
+.playhead-handle::after { content: ''; position: absolute; left: 1px; top: 12px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 6px solid var(--accent); }
+.playhead-handle:hover::before { background: var(--accent-hover); }
+.ruler { cursor: ew-resize; touch-action: none; }
+.timeline-tools .icon-btn { width: 30px; height: 30px; }
+.timeline-tools { gap: 6px; }
+.timeline-tools > .mono { margin: 0 6px 0 4px; }

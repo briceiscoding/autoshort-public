@@ -6,7 +6,8 @@ in `theme/theme.json`.
 
 What ships with the repository is free to use:
 
-- `fonts/`: Poppins, Montserrat, DM Serif Display, Bitcount (SIL Open Font License 1.1). Add your own fonts from the
+- `fonts/`: Poppins, Montserrat, DM Serif Display, Bitcount, Merriweather (SIL Open Font License 1.1, text for
+  Merriweather in `fonts/Merriweather-OFL.txt`). Add your own fonts from the
   Styles tab (Google Fonts by name, or a .ttf / .otf / .woff file).
 - `sfx/`: `bloop.wav`, `whoosh.wav`, `keyboard_typing_fast.wav`, synthesised for AutoShort (public domain, CC0). Drop
   your own sounds here and point `theme/theme.json` -> `sfx` at them.

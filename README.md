@@ -4,6 +4,9 @@
 tes images sur le bon mot, et exporte un MP4 prêt pour TikTok, YouTube Shorts et Reels. Tout tourne sur ton
 ordinateur : ta vidéo ne part sur aucun serveur.
 
+📄 **Pas développeur ?** Suis le [guide de démarrage en PDF](Guide-de-demarrage.pdf) (2 pages) : installation pas à pas
+sur Windows et Mac, premier short, personnalisation et connexion à Claude.
+
 ## Ce qu'il te faut
 
 - **Windows avec une carte graphique NVIDIA** (CUDA), ou un **Mac Apple Silicon** (M1 et plus, l'import est plus lent).

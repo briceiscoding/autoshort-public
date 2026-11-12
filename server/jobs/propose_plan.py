@@ -274,7 +274,7 @@ def apply_proposal(plan: dict, p: dict, allow_cuts: bool = True) -> dict:
     for new in plan["logos"]:
         old = next((o for o in old_logos if o["asset"] == new["asset"]), None)
         if old:
-            new.update({k: old[k] for k in ("x", "y", "size", "process", "sfx") if k in old and k not in new})
+            new.update({k: old[k] for k in ("x", "y", "size", "process", "sfx", "enter", "shake") if k in old and k not in new})
     diagrams = []
     for i, d in enumerate(p["diagrams"]):
         a, b = get(d["fromWord"]), get(d["toWord"])

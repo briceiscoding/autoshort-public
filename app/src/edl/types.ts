@@ -44,6 +44,8 @@ export type EdlLogo = {
 	sourceWidth?: number;
 	sourceHeight?: number;
 	process?: 'luma_key' | 'rembg' | null;
+	enter?: 'pop' | 'top' | 'bottom' | 'left' | 'right';
+	shake?: number;
 };
 
 export type EdlAsset = {

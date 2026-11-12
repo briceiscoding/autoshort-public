@@ -497,6 +497,20 @@
           },
           "sfx": {
             "type": "boolean"
+          },
+          "enter": {
+            "type": "string",
+            "enum": [
+              "pop",
+              "top",
+              "bottom",
+              "left",
+              "right"
+            ]
+          },
+          "shake": {
+            "type": "number",
+            "minimum": 0
           }
         },
         "required": [

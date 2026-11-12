@@ -106,6 +106,8 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 			sourceWidth: asset?.width,
 			sourceHeight: asset?.height,
 			process: l.process ?? null,
+			...(l.enter !== undefined ? {enter: l.enter} : {}),
+			...(l.shake !== undefined ? {shake: l.shake} : {}),
 		};
 	});
 

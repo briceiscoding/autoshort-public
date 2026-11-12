@@ -67,6 +67,8 @@ class Logo(Timed):
     y: Optional[float] = None
     process: Optional[Literal["luma_key", "rembg"]] = None
     sfx: Optional[bool] = None
+    enter: Optional[Literal["pop", "top", "bottom", "left", "right"]] = None
+    shake: Optional[float] = None
 
 
 class CutIn(Timed):

@@ -136,10 +136,15 @@ export const LogoLayer: React.FC<{logo: EdlLogo}> = ({logo}) => {
 	const {fps, durationInFrames} = useVideoConfig();
 	const time = frame / fps;
 	const total = durationInFrames / fps;
+	const {width: frameW, height: frameH} = useVideoConfig();
 	const pop = theme.logos.popS;
-	const scale = interpolate(time, [0, pop * 0.68, pop], [0, 1.15, 1], {...clamp, easing: easeOut});
+	// The default entrance is the pop; a slide from an edge replaces it.
+	const slide = logo.enter && logo.enter !== 'pop' ? logo.enter : undefined;
+	const scale = slide ? 1 : interpolate(time, [0, pop * 0.68, pop], [0, 1.15, 1], {...clamp, easing: easeOut});
 	const opacity = interpolate(time, [total - 0.15, total], [1, 0], clamp);
 	const rect = logoRect(logo, theme);
+	const motion = enterMotion(slide, time, {x: rect.x + rect.w / 2, y: rect.y + rect.h / 2}, {width: frameW, height: frameH});
+	const shake = logo.shake ?? 0;
 	// Visible area only (the legacy pipeline trimmed transparent margins on a copy).
 	const box = logo.alphaBox;
 	const k = box ? rect.h / (box[3] - box[1]) : 1;
@@ -152,7 +157,7 @@ export const LogoLayer: React.FC<{logo: EdlLogo}> = ({logo}) => {
 				width: rect.w,
 				height: rect.h,
 				overflow: 'hidden',
-				transform: `scale(${scale}) ${floatTransform(time, 1.1)}`,
+				transform: `${motion.transform === 'none' ? '' : `${motion.transform} `}scale(${scale}) ${shake > 0 ? shakeTransform(time, shake) : floatTransform(time, 1.1)}`,
 				opacity,
 			}}
 		>

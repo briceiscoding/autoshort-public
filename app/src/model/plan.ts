@@ -91,6 +91,9 @@ export const LogoSchema = z
 		// Background removal applied on a copy at export.
 		process: z.enum(['luma_key', 'rembg']).nullable().optional(),
 		sfx: z.boolean().optional(),
+		// Entrance (absent or pop = the default pop) and trembling strength in px, like pictures.
+		enter: z.enum(['pop', 'top', 'bottom', 'left', 'right']).optional(),
+		shake: z.number().min(0).optional(),
 	})
 	.strict();
 

@@ -327,6 +327,17 @@ const LogoInspector: React.FC<{logo: Logo}> = ({logo}) => {
 					<option value="rembg">rembg (BiRefNet, GPU job)</option>
 				</select>
 			</label>
+			<label className="field">
+				<span>Entrance</span>
+				<select value={logo.enter && logo.enter !== 'pop' ? logo.enter : ''} onChange={(e) => set({enter: (e.target.value || undefined) as Logo['enter']})}>
+					<option value="">Pop (default)</option>
+					<option value="top">From the top</option>
+					<option value="bottom">From the bottom</option>
+					<option value="left">From the left</option>
+					<option value="right">From the right</option>
+				</select>
+			</label>
+			<Range label="Shake (px)" value={logo.shake ?? 0} min={0} max={20} step={1} onChange={(v) => set({shake: v || undefined})} />
 			<Check label="Bloop SFX" value={logo.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<TimeFields kind="logo" id={logo.id} start={logo.start} end={logo.end} />
 			<p className="muted small">Drag the logo on the preview to move it, drag its corner to resize.</p>

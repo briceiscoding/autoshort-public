@@ -11,18 +11,22 @@ ordinateur : ta vidéo ne part sur aucun serveur.
 - Environ 10 Go libres (les modèles d'IA sont téléchargés une seule fois au premier lancement).
 - [Node.js 22](https://nodejs.org), [uv](https://docs.astral.sh/uv/getting-started/installation/) et
   [ffmpeg](https://ffmpeg.org/download.html) installés et accessibles dans le terminal.
-- Optionnel : [Claude Code](https://claude.com/claude-code) avec un abonnement Claude (Pro ou Max) pour la proposition
-  de montage automatique. Sans Claude, tout le reste fonctionne.
+- Optionnel : [Claude Code](https://claude.com/claude-code) pour la proposition de montage et les retours à Claude,
+  avec un abonnement Claude Pro ou Max (ou une clé API Anthropic, facturée à l'usage). Le plan gratuit n'inclut pas
+  Claude Code. Sans Claude, tout le reste fonctionne.
 
 ## Installation
 
-1. Télécharge le repo (bouton **Code → Download ZIP**, puis décompresse) ou `git clone`.
+1. Télécharge le repo (bouton **Code → Download ZIP**, puis décompresse) ou clone-le :
+   `git clone https://github.com/briceiscoding/autoshort-public.git`
 2. **Windows** : double-clique sur `start.bat`. **macOS** : `brew install node uv ffmpeg`, puis double-clique sur
    `launcher/AutoShort.command` (si macOS refuse : clic droit → Ouvrir).
 3. Le premier lancement installe tout ce qui manque (plusieurs minutes, quelques Go), puis l'app s'ouvre dans sa
    propre fenêtre. Les lancements suivants prennent quelques secondes.
 
-Fermer la fenêtre arrête l'app. Pour une icône sur le bureau Windows : crée un raccourci vers `launcher/AutoShort.vbs`
+Pour Claude : bouton **Settings** sur l'accueil. Colle le jeton donné par `claude setup-token` (abonnement) ou une
+clé API, ou laisse vide si tu t'es déjà connecté avec `claude` dans un terminal. Le bouton **Test the connection**
+vérifie que tout marche. Fermer la fenêtre arrête l'app. Pour une icône sur le bureau Windows : crée un raccourci vers `launcher/AutoShort.vbs`
 avec l'icône `launcher/autoshort-icon.ico`.
 
 ## Ton premier short
@@ -32,8 +36,12 @@ avec l'icône `launcher/autoshort-icon.ico`.
    `logo__docker.png`, `screen__dashboard.png`, `full__resultat.jpg`, `bg__serveur.jpg` (derrière ta tête).
 2. **Launch the video** : choisis si ta vidéo est déjà montée (rien n'est coupé) ou brute (silences, « euh » et
    répétitions coupés). Transcription, sous-titres et zooms sont faits automatiquement.
-3. Optionnel : **Plan proposal (Claude)** propose des mots concepts, des schémas animés et place tes images.
-4. Retouche : texte des sous-titres (Transcript), timeline, Inspector, onglet **Styles** (polices, couleurs, contours).
+3. Optionnel : **Plan proposal (Claude)** propose des mots concepts, des schémas animés et place tes images. Dans
+   l'onglet **Claude**, écris un retour (« moins de concepts », « un schéma sur les 3 étapes »…) : Claude révise le
+   montage, et tu acceptes le brouillon en gardant ou non la version précédente dans l'historique.
+4. Retouche : texte des sous-titres (Transcript), timeline (glisse la tête de lecture), Inspector, onglet **Styles**
+   (polices, couleurs, contours). Dans l'aperçu, déplace, redimensionne (coin ou molette) et fais pivoter images,
+   logos et rappel d'abonnement ; choisis leur entrée (pop, depuis un bord) dans l'Inspector. Suppr efface la sélection.
 5. **Export the video** : le MP4 et ses sous-titres `.srt`, dans le projet et dans le dossier de ton choix.
 
 ## Personnaliser

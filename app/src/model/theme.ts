@@ -9,7 +9,7 @@ const Opacity = z.number().min(0).max(1);
 // override it for itself (plan.concepts[].style).
 export const TextStyleSchema = z
 	.object({
-		// Font file in the library, e.g. "fonts/Poppins-ExtraBold.ttf" (ttf, otf, woff, woff2).
+		// Font file in the library, e.g. "fonts/Montserrat-ExtraBold.ttf" (ttf, otf, woff, woff2).
 		font: z.string().min(1),
 		size: z.number().positive(),
 		// Faux bold / italic on top of the font file (choose a Bold file for a real bold).

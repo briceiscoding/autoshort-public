@@ -64,7 +64,7 @@ export const speechGaps = (regions: {start: number; end: number}[], words: {star
 
 const fmt = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 
-// Approximate caption line count without a canvas (Poppins ExtraBold averages ~0.62 em per character).
+// Approximate caption line count without a canvas (~0.62 em per character, a safe margin for bold sans fonts such as Montserrat ExtraBold).
 const estimateLines = (text: string, theme: Theme): number => {
 	const style = theme.textStyles.caption;
 	const charW = style.size * 0.62 + style.letterSpacing;

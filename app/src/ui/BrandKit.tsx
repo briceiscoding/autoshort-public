@@ -11,7 +11,7 @@ const MOMENTS: Record<string, {label: string; hint: string}> = {
 	logo: {label: 'A logo appears', hint: 'short pop'},
 	zoom: {label: 'Zoom in', hint: 'every zoomed sentence'},
 	conceptTyping: {label: 'Concept word typed', hint: 'keyboard, cut at the last letter'},
-	diagramOpen: {label: 'Diagram opens', hint: 'whoosh'},
+	diagramOpen: {label: 'Diagram opens', hint: ''},
 	diagramElement: {label: 'Diagram element drawn', hint: 'one per element'},
 	gauge: {label: 'Gauge appears', hint: ''},
 	gaugeLanding: {label: 'Gauge lands', hint: ''},
@@ -122,16 +122,19 @@ export const BrandKitPage: React.FC = () => {
 						<div className="kit-head">
 							<span className="kit-icon"><Icon name="music" size={18} /></span>
 							<h3 className="grow">Sound effects</h3>
-							<Status ok={kit.sfx.every((s) => s.exists)} missingText="Some sounds are missing" />
+							<Status ok={kit.sfx.every((s) => s.exists)} missingText={kit.sfx.some((s) => s.exists) ? 'Some moments have no sound' : 'No sound yet'} />
 						</div>
-						<p className="muted small">One sound per moment of the edit, played under your voice. Short sounds (under a second) work best.</p>
+						<p className="muted small">
+							AutoShort ships without sounds: import yours to hear an effect at each moment of the edit (a moment without a sound stays silent). They play
+							under your voice; short sounds (under a second) work best.
+						</p>
 						<ul className="sfx-list">
 							{kit.sfx.map((s) => (
 								<li key={s.rule}>
 									<div className="grow">
 										<strong>{MOMENTS[s.rule]?.label ?? s.rule}</strong>
 										<span className="muted small">
-											{s.exists ? s.file : `missing${s.file ? `: ${s.file}` : ''}`}
+											{s.exists ? s.file : s.file ? `missing: ${s.file}` : 'no sound'}
 											{MOMENTS[s.rule]?.hint ? ` · ${MOMENTS[s.rule].hint}` : ''}
 										</span>
 									</div>
@@ -142,7 +145,7 @@ export const BrandKitPage: React.FC = () => {
 									) : null}
 									<PickFile
 										accept=".wav,.mp3,.ogg,.m4a,.flac,audio/*"
-										label="Replace"
+										label={s.file ? 'Replace' : 'Import'}
 										primary={!s.exists}
 										busy={busy === s.rule}
 										onPick={(f) => run(s.rule, () => api.uploadSfx(f, s.rule), `${MOMENTS[s.rule]?.label ?? s.rule}`)}

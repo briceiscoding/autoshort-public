@@ -235,6 +235,7 @@ export const CatalogPanel: React.FC = () => {
 					Manage sounds
 				</a>
 			</h4>
+			{sfxFiles.length ? null : <p className="muted small">No sound yet: import yours in the Brand kit.</p>}
 			<ul className="asset-list">
 				{sfxFiles.map((f) => (
 					<li key={f}>

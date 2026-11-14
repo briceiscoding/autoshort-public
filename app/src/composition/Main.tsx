@@ -155,7 +155,7 @@ const DiagramLayer: React.FC<{diagram: Edl['diagrams'][number]; slug: string}> =
 };
 
 const MissingDiagram: React.FC<{name: string}> = ({name}) => (
-	<AbsoluteFill style={{backgroundColor: '#1A1A1D', color: '#FF0855', fontSize: 60, alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif'}}>
+	<AbsoluteFill style={{backgroundColor: '#1A1A1D', color: '#FFFFFF', fontSize: 60, alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif'}}>
 		Missing diagram: {name}
 	</AbsoluteFill>
 );

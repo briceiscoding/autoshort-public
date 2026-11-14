@@ -12,16 +12,16 @@
     "targetDurationS": 60
   },
   "colors": {
-    "accent": "#FF0855",
+    "accent": "#FFFFFF",
     "white": "#FFFFFF",
-    "cream": "#F4EFE6",
+    "cream": "#FFFFFF",
     "diagramBg": "#1A1A1D",
     "success": "#22C55E"
   },
   "fonts": {
     "caption": {
-      "family": "PoppinsExtraBold",
-      "file": "fonts/Poppins-ExtraBold.ttf"
+      "family": "MontserratExtraBold",
+      "file": "fonts/Montserrat-ExtraBold.ttf"
     },
     "display": {
       "family": "MontserratExtraBold",
@@ -30,7 +30,7 @@
   },
   "textStyles": {
     "caption": {
-      "font": "fonts/Poppins-ExtraBold.ttf",
+      "font": "fonts/Montserrat-ExtraBold.ttf",
       "size": 66,
       "bold": false,
       "italic": false,
@@ -46,7 +46,7 @@
       "maxWidth": 780
     },
     "highlight": {
-      "font": "fonts/Poppins-ExtraBold.ttf",
+      "font": "fonts/Montserrat-ExtraBold.ttf",
       "size": 66,
       "bold": false,
       "italic": false,
@@ -56,13 +56,7 @@
       "color": "#FFFFFF",
       "stroke": null,
       "shadow": null,
-      "background": {
-        "color": "#FF0855",
-        "opacity": 1,
-        "radius": 14,
-        "padX": 14,
-        "padY": 6
-      },
+      "background": null,
       "x": 540,
       "y": 1300,
       "maxWidth": 780
@@ -75,7 +69,7 @@
       "uppercase": true,
       "letterSpacing": 0,
       "lineHeight": 1.05,
-      "color": "#E1FF00",
+      "color": "#FFFFFF",
       "stroke": null,
       "shadow": {
         "x": 0,
@@ -90,21 +84,20 @@
       "maxWidth": 780
     },
     "keyword": {
-      "font": "fonts/Poppins-ExtraBold.ttf",
+      "font": "fonts/Montserrat-ExtraBold.ttf",
       "size": 66,
       "bold": false,
       "italic": false,
-      "uppercase": true,
+      "uppercase": false,
       "letterSpacing": 0,
       "lineHeight": 1.2,
-      "color": "#FF0855",
+      "color": "#FFFFFF",
       "stroke": null,
       "shadow": null,
       "background": null,
       "x": 540,
       "y": 1300,
-      "maxWidth": 780,
-      "quotes": "french"
+      "maxWidth": 780
     }
   },
   "safeZone": {
@@ -204,14 +197,14 @@
     "previewMusicGain": 0.06
   },
   "sfx": {
-    "cutIn": "bloop.wav",
-    "logo": "bloop.wav",
-    "conceptTyping": "keyboard_typing_fast.wav",
-    "diagramOpen": "whoosh.wav",
-    "diagramElement": "bloop.wav",
-    "gauge": "bloop.wav",
-    "gaugeLanding": "bloop.wav",
-    "zoom": "whoosh.wav"
+    "cutIn": null,
+    "logo": null,
+    "conceptTyping": null,
+    "diagramOpen": null,
+    "diagramElement": null,
+    "gauge": null,
+    "gaugeLanding": null,
+    "zoom": null
   },
   "subscribe": {
     "file": "brand/subscribe.mp4",

@@ -166,7 +166,7 @@ const Toggle: React.FC<{label: string; value: boolean; onChange: (v: boolean) =>
 
 const DEFAULT_STROKE = {width: 4, color: '#000000'};
 const DEFAULT_SHADOW = {x: 0, y: 6, blur: 14, color: '#000000', opacity: 0.5};
-const DEFAULT_BACKGROUND = {color: '#FF0855', opacity: 1, radius: 14, padX: 14, padY: 6};
+const DEFAULT_BACKGROUND = {color: '#000000', opacity: 1, radius: 14, padX: 14, padY: 6};
 const DEFAULT_BORDER = {width: 6, color: '#FFFFFF', opacity: 1};
 
 export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStylePatch) => void; position?: boolean; quotes?: boolean}> = ({style, onChange, position = true, quotes = false}) => {

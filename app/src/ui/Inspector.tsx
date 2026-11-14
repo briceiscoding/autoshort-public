@@ -344,7 +344,7 @@ const LogoInspector: React.FC<{logo: Logo}> = ({logo}) => {
 			</label>
 			<Range label="Shake (px)" value={logo.shake ?? 0} min={0} max={20} step={1} onChange={(v) => set({shake: v || undefined})} />
 			<Range label="Rotation (°)" value={logo.rotate ?? 0} min={-180} max={180} step={1} onChange={(v) => set({rotate: v || undefined})} />
-			<Check label="Bloop SFX" value={logo.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
+			<Check label="Sound on entry" value={logo.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<TimeFields kind="logo" id={logo.id} start={logo.start} end={logo.end} />
 			<p className="muted small">Drag the logo on the preview to move it, its corner to resize, the round handle to turn it. Delete or Backspace removes it.</p>
 			<Delete kind="logo" id={logo.id} />
@@ -393,7 +393,7 @@ const CutInInspector: React.FC<{cutIn: CutIn}> = ({cutIn}) => {
 				<button className="small" onClick={() => set({x: undefined, y: undefined, width: undefined, zoom: undefined, rotate: undefined})}>Reset</button>
 			</div>
 			<CutInFrameSection cutIn={cutIn} />
-			<Check label="Bloop SFX on entry" value={cutIn.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
+			<Check label="Sound on entry" value={cutIn.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<TimeFields kind="cutIn" id={cutIn.id} start={cutIn.start} end={cutIn.end} />
 			<Delete kind="cutIn" id={cutIn.id} />
 		</div>
@@ -472,7 +472,7 @@ const DiagramInspector: React.FC<{diagram: Diagram}> = ({diagram}) => {
 				<input value={diagram.description ?? ''} onChange={(e) => set({description: e.target.value})} />
 			</label>
 			<TimeFields kind="diagram" id={diagram.id} start={diagram.start} end={diagram.end} />
-			<Check label="Whoosh on opening + bloop per element" value={diagram.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
+			<Check label="Sounds (opening + each element)" value={diagram.sfx !== false} onChange={(v) => set({sfx: v ? undefined : false})} />
 			<h4>Elements <span className="muted small">(each appears on its trigger word)</span></h4>
 			<datalist id="icon-names">{[...new Set(ICON_LIST)].map((n) => <option key={n} value={n} />)}</datalist>
 			{diagram.elements.map((el, i) => (
@@ -583,7 +583,7 @@ const AutoSfxInspector: React.FC<{index: number}> = ({index}) => {
 			<p>
 				<strong>{s.file}</strong> at {s.time.toFixed(2)} s — {s.reason}
 			</p>
-			<p className="muted small">Placed by the theme rules (whoosh on diagram opening, bloop on pictures, logos and diagram elements, keyboard on concepts). Disable it on its source event, or change the rule in the theme.</p>
+			<p className="muted small">Placed by the sound rules of the Brand kit (one sound per moment: picture, logo, zoom, concept, diagram). Disable it on its source event, or change the sound in the Brand kit.</p>
 			{s.ref ? <button onClick={() => {
 				const plan = editor.get().plan!;
 				const kind = plan.logos.some((l) => l.id === s.ref) ? 'logo' : plan.cutIns.some((c) => c.id === s.ref) ? 'cutIn' : plan.diagrams.some((d) => d.id === s.ref) ? 'diagram' : plan.gauges.some((g) => g.id === s.ref) ? 'gauge' : plan.concepts.some((c) => c.id === s.ref) ? 'concept' : null;

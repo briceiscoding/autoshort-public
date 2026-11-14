@@ -1,6 +1,6 @@
-# charte.md : direction artistique des shorts (exemple à adapter à ta marque)
+# charte.md : direction artistique des shorts (style neutre par défaut, à adapter à ta marque)
 
-Cette charte est un EXEMPLE : change les couleurs, polices et règles pour qu'elles correspondent à ta marque. Claude la lit pour proposer chaque montage, et `theme/theme.json` contient les valeurs utilisées au rendu.
+Cette charte décrit le style NEUTRE livré avec AutoShort (textes blancs en Montserrat ExtraBold, aucun son, aucune couleur d'accent). Remplace couleurs, polices, sons et règles par les tiens pour qu'ils correspondent à ta marque. Claude la lit pour proposer chaque montage, et `theme/theme.json` contient les valeurs utilisées au rendu.
 
 Cette charte est FIXE. Elle s'applique à chaque vidéo, sans exception, sauf si je demande explicitement autre chose pour une vidéo précise.
 Toutes les valeurs en pixels sont données pour un canvas 1080 x 1920.
@@ -13,20 +13,18 @@ Toutes les valeurs en pixels sont données pour un canvas 1080 x 1920.
 - Codec : H.264, CRF 18, preset veryfast, pixel format yuv420p
 - Audio : AAC 48 kHz, 192 kbps
 
-## 2. Couleurs et polices
+## 2. Couleurs et polices (style neutre par défaut, à remplacer par les tiens)
 
 | Rôle | Valeur |
 |------|--------|
-| Accent (unique) | `#FF0855` |
-| Blanc | `#FFFFFF` |
-| Trait schéma (crème) | `#F4EFE6` |
+| Texte (sous-titres, mots mis en avant, concepts, schémas) | blanc `#FFFFFF` |
+| Accent | aucun par défaut (blanc) : choisis ta couleur de marque |
 | Fond schéma | `#1A1A1D` |
 | Quadrillage schéma | `#FFFFFF` à 6 % d'opacité |
 | Vert succès (uniquement les checks de validation dans les schémas) | `#22C55E` |
-| Police sous-titres, mots mis en avant compris | Poppins ExtraBold |
-| Police concepts + textes de schéma + textes d'habillage (jauge...) | Montserrat ExtraBold, en gros, toujours en MAJUSCULES |
+| Police de tous les textes | Montserrat ExtraBold |
 
-Aucune autre couleur d'accent, aucune autre police.
+Une seule police et pas de couleur d'accent tant que tu n'as pas défini les tiennes.
 
 ## 3. Zones de sécurité (interfaces TikTok, YouTube Shorts, Instagram Reels)
 
@@ -51,7 +49,7 @@ Repères de cadrage habituels (à vérifier sur chaque rush) : yeux vers y = 700
 3. Moi détouré (uniquement pendant un asset `bg`)
 4. Plan de coupe plein écran : schéma animé, asset `full` ou `screen`
 5. Logo (mode `logo`)
-6. Mot concept (Montserrat ExtraBold)
+6. Mot concept
 7. Sous-titres (toujours au-dessus de tout)
 8. Overlay abonnement YouTube
 
@@ -60,7 +58,7 @@ Règle de calme : un seul élément "événement" à la fois parmi les calques 2
 ## 5. Sous-titres (présents partout, y compris pendant les schémas et plans de coupe, sauf pendant un mot concept)
 
 ### Typographie
-- Poppins ExtraBold, 66 px (identique sur toute la vidéo ; un bloc trop long est réduit pour tenir sur sa ligne)
+- Montserrat ExtraBold, 66 px (identique sur toute la vidéo ; un bloc trop long est réduit pour tenir sur sa ligne)
 - Texte blanc, SANS contour et SANS ombre
 - Casse normale, interligne 120 %
 
@@ -80,16 +78,16 @@ Règle de calme : un seul élément "événement" à la fois parmi les calques 2
 - Pop : scale 70 % > 110 % > 100 %, opacité 0 > 100 %, 150 ms, ease-out
 - Le bloc disparaît d'un coup à la fin
 
-### Mots mis en avant : fond `#FF0855`, effet loupe
-- Fond `#FF0855`, coins arrondis 14 px, marge interne 6 px / 14 px, texte blanc, sans contour et sans ombre
-- Même police, même taille et même casse que le reste du sous-titre (Poppins ExtraBold), jamais de majuscules forcées
+### Mots mis en avant : effet loupe
+- Par défaut sans fond ni couleur : texte blanc, sans contour et sans ombre (ajoute un fond ou une couleur de marque dans l'onglet Styles)
+- Même police, même taille et même casse que le reste du sous-titre, jamais de majuscules forcées
 - Effet loupe (blob) au moment où je prononce le mot : le mot et son fond gonflent en scale fluide 85 % > 130 % en 160 ms, puis reviennent à 100 % en 260 ms, ease-in-out, sans rebond sec. Le mot pousse ses voisins sans faire changer les lignes
 - Mots visés : chiffres, noms d'outils, mot qui porte le sens, mots de contraste
 - 1 mot par bloc maximum, jamais deux blocs consécutifs
 
-## 6. Mots concepts (police Montserrat ExtraBold)
+## 6. Mots concepts
 
-Rôle : faire ressortir les 2 à 5 idées clés de la vidéo, pas l'emphase d'une phrase (ça, c'est le fond `#FF0855` des sous-titres).
+Rôle : faire ressortir les 2 à 5 idées clés de la vidéo, pas l'emphase d'une phrase (ça, c'est le mot mis en avant des sous-titres).
 
 - Police : Montserrat ExtraBold, toujours en MAJUSCULES, 140 px jusqu'à 12 caractères, 90 px au-delà, 2 lignes maximum
 - Couleur : blanc `#FFFFFF`, AUCUN fond, ombre noire 50 %, décalage 0 / 6 px, flou 14 px pour rester lisible sur l'image
@@ -99,9 +97,9 @@ Rôle : faire ressortir les 2 à 5 idées clés de la vidéo, pas l'emphase d'un
 - Durée à l'écran : de l'apparition jusqu'à la fin des mots qu'il remplace (4 s maximum)
 - Les sous-titres sont masqués pendant le concept pour ne pas faire doublon. Ils reviennent au début du fondu de sortie. Le premier mot du concept ouvre un nouveau bloc de sous-titres, et les mots masqués restent dans le `.srt`.
 - Sortie : fondu 150 ms
-- SFX : son de clavier depuis `library/sfx/` calé sur la frappe, coupé avec un fondu de 50 ms à la dernière lettre
+- SFX (seulement si un son est choisi pour ce moment dans le Brand kit) : calé sur la frappe, coupé avec un fondu de 50 ms à la dernière lettre
 - Fréquence : 1 concept toutes les 8 secondes maximum
-- Un mot affiché en concept n'est PAS en plus mis en avant en `#FF0855` dans le sous-titre au même moment
+- Un mot affiché en concept n'est PAS en plus mis en avant dans le sous-titre au même moment
 
 ## 7. Schémas animés (style dessiné)
 
@@ -114,17 +112,17 @@ Plan de coupe plein écran, ma voix continue, les sous-titres restent affichés.
 
 ### Style du dessin
 - Rendu dessiné à la main : traits légèrement irréguliers (style rough.js, roughness 1,2 à 1,6), jamais de formes vectorielles parfaites
-- Traits crème `#F4EFE6`, épaisseur 7 px, bouts ronds
-- Formes en "sticker" : remplissage crème ou `#1A1A1D`, avec une ombre décalée pleine `#FF0855` (décalage 10 px vers le bas et la droite)
+- Traits blancs, épaisseur 7 px, bouts ronds
+- Formes en "sticker" : remplissage blanc ou `#1A1A1D`, avec une ombre décalée pleine de la couleur d'accent (décalage 10 px vers le bas et la droite)
 - Icônes : style trait simple (base Lucide), redessinées dans le même style
-- `#FF0855` réservé à : l'élément clé du schéma et ses mots clés, les flèches / liaisons importantes, les ombres sticker, les points d'attention (point d'exclamation)
+- Couleur d'accent (blanche par défaut) réservée à : l'élément clé du schéma et ses mots clés, les flèches / liaisons importantes, les ombres sticker, les points d'attention (point d'exclamation)
 - Validation ou résultat réussi : gros check dessiné vert `#22C55E`, jamais d'étoile
-- Textes dans le schéma : Montserrat ExtraBold, en MAJUSCULES, crème, 60 à 72 px
+- Textes dans le schéma : Montserrat ExtraBold, en MAJUSCULES, blancs, 60 à 72 px
 - Effet "boil" (bloblob) sur TOUS les éléments, textes compris : le tracé change de graine toutes les 4 frames une fois dessiné, et tout le schéma ondule légèrement (déplacement SVG), pour un rendu vivant
 
 ### Animation
 - Chaque trait se dessine (stroke-dashoffset), du début à la fin du trait, vitesse environ 1 200 px/s
-- Ordre de dessin : contour du cadre principal > éléments un par un > liaisons > éléments `#FF0855` en dernier
+- Ordre de dessin : contour du cadre principal > éléments un par un > liaisons > éléments d'accent en dernier
 - Chaque élément apparaît au moment où j'en parle (timestamps de `transcript.json`), pas tous d'un coup
 - Remplissages et ombres sticker : apparaissent en 120 ms juste après la fin du contour
 - Sortie du schéma : cut sec vers la vidéo
@@ -134,11 +132,10 @@ Plan de coupe plein écran, ma voix continue, les sous-titres restent affichés.
 - 6 éléments maximum par schéma, 3 mots maximum par étiquette
 - Durée : 3 à 8 secondes
 
-### SFX du schéma
-- Ouverture du schéma : son de papier
-- Chaque trait dessiné : son de feutre / crayon, découpé à la durée du trait
-- Élément `#FF0855` qui apparaît : pop discret
-- Jamais plus de 2 sons de feutre qui se chevauchent
+### SFX du schéma (seulement si des sons sont choisis dans le Brand kit)
+- Ouverture du schéma : un son d'ouverture
+- Chaque élément qui apparaît : un son court et discret
+- Jamais plus de 2 sons qui se chevauchent
 
 ## 8. Assets de la vidéo (`projects/<slug>/assets/`)
 
@@ -180,7 +177,7 @@ Si un logo ou une image a un fond qui ne va pas (fond blanc sur un logo, par exe
 
 - Voix normalisée à -12 LUFS intégré, true peak -1 dBTP
 - Musique : un fichier audio ajouté aux assets de la vidéo, environ 20 dB sous la voix, ducking pendant la parole, fondu de sortie 0,5 s
-- SFX : uniquement `library/sfx/`, environ 10 dB sous la voix, jamais par-dessus un mot important au point de le masquer
+- SFX : aucun par défaut ; uniquement les sons importés dans `library/sfx/` (Brand kit), environ 10 dB sous la voix, jamais par-dessus un mot important au point de le masquer
 - Hors schémas et mots concepts : 1 SFX toutes les 3 s maximum en moyenne
 - Pas de SFX pendant les 0,3 premières secondes
 
@@ -201,4 +198,4 @@ Si un logo ou une image a un fond qui ne va pas (fond blanc sur un logo, par exe
 - Pas d'emojis
 - Pas d'animation générique (glitch, arc-en-ciel, texte qui tourne)
 - Pas de formes vectorielles parfaites dans les schémas
-- Pas d'autre couleur d'accent que `#FF0855` (seule exception : le vert des checks de schéma), pas d'autre police que Poppins ExtraBold et Montserrat ExtraBold
+- Pas d'autre couleur ni d'autre police que celles définies dans cette charte (style neutre : blanc et Montserrat ExtraBold ; seule exception : le vert des checks de schéma)

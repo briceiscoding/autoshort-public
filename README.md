@@ -50,10 +50,16 @@ macOS le demande.
 
 ## Personnaliser
 
-- `library/charte.md` : les règles de montage (couleurs, polices, rythme). C'est un exemple, adapte-le à ta marque :
+AutoShort est livré avec un style **neutre** : tous les textes en Montserrat ExtraBold, en blanc, sans couleur d'accent,
+**sans aucun son** et sans animation d'abonnement. L'app marche telle quelle, mais pour profiter de tous les effets,
+importe tes sons et ton animation d'abonnement (page **Brand kit** de l'accueil), puis règle tes polices, couleurs et
+style du mot CTA (onglet **Styles**, « Save as default for all videos »).
+
+- `library/charte.md` : les règles de montage du style neutre (couleurs, polices, rythme). Adapte-le à ta marque :
   Claude le lit pour proposer chaque montage.
 - `theme/theme.json` : les valeurs utilisées au rendu (aussi modifiables depuis l'onglet Styles).
-- `library/` : polices, effets sonores et overlay d'abonnement, voir `library/README.md`.
+- `library/` : tes polices, tes effets sonores et ton overlay d'abonnement (vides par défaut, sauf Montserrat ExtraBold),
+  voir `library/README.md`.
 - `theme/vocabulary.json` : les mots que la transcription écrit mal dans tes vidéos.
 
 ## Confidentialité
@@ -68,8 +74,7 @@ vidéo à Claude, via ton propre compte Claude Code.
   dossier), utilisé pour le détourage derrière la tête.
 - Rendu : [Remotion](https://www.remotion.dev), gratuit pour les particuliers et les petites équipes ; une entreprise de
   plus de 3 personnes doit prendre une [licence Remotion](https://www.remotion.dev/license).
-- Transcription : WhisperX et Silero VAD. Polices : SIL Open Font License. Icônes : Lucide (ISC) et Simple Icons (CC0).
-  Effets sonores fournis : générés pour AutoShort, domaine public.
+- Transcription : WhisperX et Silero VAD. Police : Montserrat (SIL Open Font License). Icônes : Lucide (ISC) et Simple Icons (CC0).
 
 Fourni tel quel, sans garantie ni support. Fait par [@briceiscoding](https://youtube.com/@briceiscoding) :
 [YouTube](https://youtube.com/@briceiscoding) · [TikTok](https://tiktok.com/@briceiscoding) ·

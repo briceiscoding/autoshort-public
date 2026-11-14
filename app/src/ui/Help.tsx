@@ -21,7 +21,7 @@ export const HELP_SECTIONS: Section[] = [
 					corbeille pour le supprimer (il part dans la corbeille de l'ordinateur, tu peux le récupérer).
 				</p>
 				<ul>
-					<li><B>Brand kit</B> : ce que tous tes shorts partagent (rappel d'abonnement, sons, polices).</li>
+					<li><B>Brand kit</B> : ce que tous tes shorts partagent (rappel d'abonnement, sons, polices). AutoShort est livré sans sons ni animation d'abonnement : importe les tiens ici pour profiter de tous les effets.</li>
 					<li><B>Settings</B> : la connexion à Claude (optionnelle).</li>
 					<li>La lune / le soleil en haut à droite : thème sombre ou clair.</li>
 				</ul>
@@ -138,6 +138,10 @@ export const HELP_SECTIONS: Section[] = [
 						Tes réglages valent pour ce short. <B>Save as default for all videos</B> en fait le style de tous tes futurs shorts.
 					</li>
 				</ul>
+				<p>
+					Style par défaut, volontairement neutre : tous les textes en <B>Montserrat ExtraBold</B>, en blanc, sans couleur d'accent. Mets tes polices, tes
+					couleurs, tes fonds et tes contours pour que tes shorts aient ta marque.
+				</p>
 				<p className="muted">Vérifie la licence d'une police avant de publier (les Google Fonts sont libres).</p>
 			</>
 		),
@@ -165,7 +169,7 @@ export const HELP_SECTIONS: Section[] = [
 					<li><B>Shake</B> (tremblement), <B>Rotation</B>, <B>Dark veil</B> (voile sombre), <B>Zoom</B> en plein écran.</li>
 					<li>Pour une vidéo : <B>Skip first seconds</B> pour sauter son début.</li>
 					<li><B>Frame</B> : coins arrondis, bordure et ombre de cette image.</li>
-					<li><B>Bloop SFX on entry</B> : le petit son à son apparition.</li>
+					<li><B>Sound on entry</B> : le son de son apparition (celui choisi dans le Brand kit).</li>
 				</ul>
 				<p>Déplace, agrandis et fais pivoter dans l'aperçu (voir <a href="#/~help/apercu">L'aperçu</a>). <K>Suppr</K> la retire.</p>
 			</>
@@ -214,7 +218,7 @@ export const HELP_SECTIONS: Section[] = [
 					<li>Sélectionne-le : chaque <B>élément</B> a un texte, une icône (nom Lucide, ex. <code>database</code>), une image, et les options accent / barré / coché.</li>
 					<li><B>Entrée</B> dans le texte d'un élément crée une nouvelle ligne. Un texte trop long rétrécit tout seul pour rester dans l'écran.</li>
 					<li><B>+ Element at playhead</B> ajoute un élément qui apparaît à cet instant ; les flèches ↑ ↓ changent l'ordre.</li>
-					<li>Un « whoosh » à l'ouverture et un « bloop » par élément : décoche la case pour les retirer.</li>
+					<li>Un son à l'ouverture et un par élément, si tu les as choisis dans le Brand kit : décoche <B>Sounds</B> pour les retirer de ce schéma.</li>
 				</ul>
 			</>
 		),
@@ -226,12 +230,13 @@ export const HELP_SECTIONS: Section[] = [
 			<>
 				<ul>
 					<li>
-						<B>Sons automatiques</B> : un son par moment (image qui apparaît, logo, zoom, mot tapé, schéma…). Choisis-les et importe les tiens dans le{' '}
-						<a href="#/~brand-kit">Brand kit</a> ; des liens vers des sons gratuits y sont donnés.
+						<B>Sons automatiques</B> : un son par moment (image qui apparaît, logo, zoom, mot tapé, schéma…). AutoShort est livré <B>sans aucun son</B> :
+						importe les tiens dans le <a href="#/~brand-kit">Brand kit</a> (des liens vers des sons gratuits y sont donnés). Un moment sans son reste
+						silencieux.
 					</li>
 					<li><B>Ajouter un son à un instant précis</B> : Catalog → SFX, bouton ▶ pour écouter, <B>add</B> pour le poser à la tête de lecture.</li>
 					<li>Sur la piste SFX, glisse un son bleu pour le déplacer ; sélectionne-le pour régler son volume (Gain) ou le supprimer.</li>
-					<li>Pour enlever le son d'un seul élément : décoche « Bloop SFX » dans son Inspector.</li>
+					<li>Pour enlever le son d'un seul élément : décoche « Sound on entry » (ou « Sounds » pour un schéma) dans son Inspector.</li>
 				</ul>
 				<p className="muted">Un son sans durée réglée joue au plus 6 secondes.</p>
 			</>
@@ -256,12 +261,13 @@ export const HELP_SECTIONS: Section[] = [
 			<>
 				<p>
 					Une petite animation « abonne-toi » apparaît quand tu dis une phrase d'appel à l'action (« abonne-toi », « suis-moi »…) et reste jusqu'à la fin.
+					AutoShort n'en fournit pas : importe la tienne dans le <a href="#/~brand-kit">Brand kit</a>, sans elle aucun rappel n'est affiché.
 				</p>
 				<ul>
 					<li>Pas détecté ? Inspector sans sélection : <B>Add subscribe overlay at playhead</B>.</li>
 					<li>Sélectionne la barre « subscribe » (piste Overlay) : déplace, agrandis et fais pivoter dans l'aperçu, choisis son entrée et son tremblement.</li>
 					<li>
-						<B>Ta propre animation</B> : dans le <a href="#/~brand-kit">Brand kit</a>, remplace la vidéo (sur fond vert, le vert est retiré à l'export).
+						<B>Ton animation</B> : dans le <a href="#/~brand-kit">Brand kit</a>, importe une vidéo sur fond vert (le vert est retiré à l'export).
 					</li>
 					<li><K>Suppr</K> le retire de ce short.</li>
 				</ul>

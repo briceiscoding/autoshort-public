@@ -118,8 +118,11 @@ const renderAll = async () => {
 		crf: theme.format.crf,
 		x264Preset: theme.format.preset as 'veryfast',
 		pixelFormat: 'yuv420p',
-		imageFormat: 'jpeg',
-		jpegQuality: 95,
+		// BT.709 limited range, tagged, like the rush and what the platforms expect. Remotion's v4 default wrote an
+		// untagged full range BT.601 file (yuvj420p): players and platforms re-encoding it shifted the colours.
+		// PNG frames keep the colour conversion exact (Remotion's recommendation with an explicit colour space).
+		colorSpace: 'bt709',
+		imageFormat: 'png',
 		audioBitrate: theme.format.audioBitrate as `${number}k`,
 		outputLocation: need('out'),
 		frameRange,

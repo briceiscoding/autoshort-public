@@ -112,7 +112,7 @@ regions, transcription settings, loudness of every export.
 | `import` | probe rush + type assets → WhisperX large-v3 + Silero VAD (float16/8, OOM → int8_float16/4, never CPU) → burst fallback (only when VAD speech has no words, or on demand) → face track (OpenCV) → first plan → preview media | app venv / ai venv (GPU) |
 | `propose` | Claude Code headless proposes a plan as data → merged → validated → `plan.draft.json` | app venv + `claude` |
 | `preview` | keyed subscribe overlay (VP9 alpha), luma-key logos, rembg logos (GPU), speaker cutout for `bg` pictures (Robust Video Matting, GPU, only the bg ranges + 0.5 s) — on copies in `data/cache` | app / ai venv |
-| `export` | EDL (TS) → preview media → exact audio (2-pass loudnorm voice, music levelled + sidechain ducking, SFX gains) → Remotion render (H.264 CRF 18 veryfast, yuv420p, AAC 192k) → limiter → loudness/true peak measure → `exports/<slug>_vN.mp4` + `.srt` → control frames | node + app venv |
+| `export` | EDL (TS) → preview media → exact audio (2-pass loudnorm voice, music levelled + sidechain ducking, SFX gains) → Remotion render (H.264 CRF 18 veryfast, yuv420p BT.709, PNG frames, AAC 192k) → limiter → loudness/true peak measure → `exports/<slug>_vN.mp4` + `.srt` → control frames | node + app venv |
 
 ## How Claude is invoked
 

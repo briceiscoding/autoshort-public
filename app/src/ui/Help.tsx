@@ -105,6 +105,11 @@ export const HELP_SECTIONS: Section[] = [
 						mot-clé à l'écran.
 					</li>
 					<li>
+						<B>Supprimer un sous-titre</B> sans couper le son : sélectionne le bloc (clic sur sa barre dans la timeline, ou sur un de ses mots) puis
+						<K>Suppr</K>, ou <B>Delete this caption block</B> dans l'Inspector. Pour une suite de mots : <K>Maj</K> + clic puis <B>Delete captions</B>.
+						Les mots supprimés restent dans la Transcript, en pointillés, et <B>Show this caption again</B> / <B>Show captions</B> les remet.
+					</li>
+					<li>
 						<B>Mot du CTA</B> (le mot à commenter, ex. « MONTAGE ») : clique dessus puis coche <B>CTA word</B>. Il prend son propre style
 						(Styles → <B>CTA word</B>) : majuscules, couleur, contour, fond et guillemets « » ou “ ”. Corrige son texte si la transcription l'a mal écrit.
 					</li>

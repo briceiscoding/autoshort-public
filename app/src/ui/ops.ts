@@ -1,6 +1,7 @@
 // Pure edit operations on the plan (rush time). Every UI edit goes through one of these, so undo/redo is
 // just a stack of plans and the operations are unit tested.
 import {keptSegments, outputToRush, round3} from '../edl/time';
+import type {Edl} from '../edl/types';
 import type {Concept, CutIn, Diagram, DiagramElement, Logo, Plan, SfxEvent, Span, Word} from '../model/plan';
 import type {FrameStyleKind, FrameStylePatch, TextStyleKind, TextStylePatch} from '../model/theme';
 
@@ -47,6 +48,35 @@ export const updateWord = (plan: Plan, id: string, patch: Partial<Word>): Plan =
 });
 
 const wordsSorted = (plan: Plan): Word[] => [...plan.words].sort((a, b) => a.start - b.start);
+
+// Delete (hidden=true) or bring back caption words. The speech is untouched: only the on-screen text and the SRT change.
+export const setCaptionsHidden = (plan: Plan, ids: Iterable<string>, hidden: boolean): Plan => {
+	const set = new Set(ids);
+	return {
+		...plan,
+		words: plan.words.map((w) => {
+			if (!set.has(w.id)) return w;
+			const {hidden: _was, ...rest} = w;
+			return hidden ? {...rest, hidden: true} : rest;
+		}),
+	};
+};
+
+// The word ids of the caption block shown on screen that contains a word (empty when the word is not shown).
+export const captionBlockIds = (edl: Edl, id: string): string[] =>
+	edl.captions.find((b) => b.words.some((w) => w.id === id))?.words.map((w) => w.id) ?? [];
+
+// The run of consecutive deleted caption words around a word (what "show this caption again" brings back).
+export const hiddenRun = (plan: Plan, id: string): string[] => {
+	const words = wordsSorted(plan);
+	const i = words.findIndex((w) => w.id === id);
+	if (i < 0 || !words[i].hidden) return [];
+	let a = i;
+	let b = i;
+	while (a > 0 && words[a - 1].hidden) a--;
+	while (b < words.length - 1 && words[b + 1].hidden) b++;
+	return words.slice(a, b + 1).map((w) => w.id);
+};
 
 /* ---------------- spans and cuts ---------------- */
 

@@ -38,8 +38,15 @@ const buildCaptions = (plan: Plan, segments: ReturnType<typeof keptSegments>, mi
 			});
 			current = [];
 		};
-		inside.forEach((w, i) => {
-			if (i > 0 && w.blockStart) flush();
+		// A deleted (hidden) word is skipped; the block break it carried moves to the next shown word.
+		let pendingBreak = false;
+		inside.forEach((w) => {
+			if (w.hidden) {
+				pendingBreak ||= Boolean(w.blockStart);
+				return;
+			}
+			if (w.blockStart || pendingBreak) flush();
+			pendingBreak = false;
 			const toOut = (t: number) => round3(segment.outStart + Math.min(Math.max(t, segment.srcStart), segment.srcEnd) - segment.srcStart);
 			current.push({id: w.id, text: w.text, start: toOut(w.start), end: toOut(w.end), highlight: Boolean(w.highlight), ...(w.keyword ? {keyword: true} : {})});
 		});

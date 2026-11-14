@@ -26,6 +26,8 @@ export const WordSchema = z
 		highlight: z.boolean().optional(),
 		// The call-to-action word (e.g. MONTAGE in « commente MONTAGE »): drawn with the keyword text style.
 		keyword: z.boolean().optional(),
+		// Deleted from the captions: the word is not shown on screen nor in the SRT, the speech stays (unlike a cut).
+		hidden: z.boolean().optional(),
 	})
 	.strict();
 

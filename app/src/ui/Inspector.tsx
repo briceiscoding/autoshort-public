@@ -200,10 +200,11 @@ const Overview: React.FC = () => {
 
 const WordInspector: React.FC<{id: string}> = ({id}) => {
 	const plan = useEditor((s) => s.plan)!;
-	const {segments} = useDerived();
+	const {segments, edl} = useDerived();
 	const word = plan.words.find((w) => w.id === id);
 	if (!word) return null;
 	const kept = Boolean(segmentOfWord(segments, word));
+	const block = ops.captionBlockIds(edl, id);
 	const sorted = [...plan.words].sort((a, b) => a.start - b.start);
 	const index = sorted.findIndex((w) => w.id === id);
 	return (
@@ -220,6 +221,25 @@ const WordInspector: React.FC<{id: string}> = ({id}) => {
 			<div className="row">
 				<Check label="CTA word (the word to comment, its own style)" value={Boolean(word.keyword)} onChange={(v) => apply((p) => ops.updateWord(p, id, {keyword: v || undefined}))} />
 				<button className="small" onClick={() => editor.select({kind: 'textStyle', target: 'keyword'})}>Style</button>
+			</div>
+			<div className="row">
+				{word.hidden ? (
+					<>
+						<span className="small muted">Deleted from the captions (the speech is kept).</span>
+						<button onClick={() => apply((p) => ops.setCaptionsHidden(p, ops.hiddenRun(p, id), false))}>Show this caption again</button>
+					</>
+				) : (
+					<>
+						{block.length ? (
+							<button title="Removes this caption block from the screen and the SRT; the speech is kept (Delete key)" onClick={() => apply((p) => ops.setCaptionsHidden(p, block, true))}>
+								Delete this caption block
+							</button>
+						) : null}
+						<button className="small" title="Only this word disappears from the captions" onClick={() => apply((p) => ops.setCaptionsHidden(p, [id], true))}>
+							Delete this word from the captions
+						</button>
+					</>
+				)}
 			</div>
 			<div className="row">
 				{kept ? (

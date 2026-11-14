@@ -101,7 +101,8 @@ export const TranscriptPanel: React.FC = () => {
 	return (
 		<div className="transcript">
 			<p className="muted small">
-				Click a word to edit it (text, highlight, block start). Shift+click selects a range to cut or turn into a concept. Struck words are cut.{' '}
+				Click a word to edit it (text, highlight, block start). Shift+click selects a range to cut, delete from the captions or turn into a concept. Struck words are cut; faded
+				dotted words are deleted from the captions (still heard).{' '}
 				<HelpLink to="soustitres" />
 			</p>
 			<div className="row">
@@ -117,6 +118,10 @@ export const TranscriptPanel: React.FC = () => {
 				<div className="row sticky">
 					<strong className="small">{selectedRange.size} words</strong>
 					<button onClick={() => editor.apply((p) => ops.cutWords(p, range.id, range.lastId!))}>Cut selection</button>
+					<button title="Removes these words from the captions; the speech is kept" onClick={() => editor.apply((p) => ops.setCaptionsHidden(p, selectedRange, true))}>
+						Delete captions
+					</button>
+					<button onClick={() => editor.apply((p) => ops.setCaptionsHidden(p, selectedRange, false))}>Show captions</button>
 					<button
 						onClick={() => {
 							const sel = words.filter((w) => selectedRange.has(w.id));
@@ -144,7 +149,7 @@ export const TranscriptPanel: React.FC = () => {
 						<React.Fragment key={w.id}>
 							{w.blockStart ? <span className="block-break" /> : null}
 							<span
-								className={`word ${kept ? '' : 'cut'} ${w.highlight ? 'hl' : ''} ${w.keyword ? 'kw' : ''} ${lowConf ? 'low' : ''} ${selectedRange.has(w.id) ? 'selected' : ''} ${active ? 'active' : ''} ${w.original ? 'corrected' : ''}`}
+								className={`word ${kept ? '' : 'cut'} ${w.highlight ? 'hl' : ''} ${w.keyword ? 'kw' : ''} ${w.hidden ? 'nocap' : ''} ${lowConf ? 'low' : ''} ${selectedRange.has(w.id) ? 'selected' : ''} ${active ? 'active' : ''} ${w.original ? 'corrected' : ''}`}
 								title={`${w.start.toFixed(2)}-${w.end.toFixed(2)} s${w.score != null ? ` · ${Math.round(w.score * 100)} %` : ''}${w.original ? ` · was "${w.original}"` : ''}`}
 								onClick={(e) => {
 									if (e.shiftKey && anchor) editor.select({kind: 'word', id: anchor, lastId: w.id});

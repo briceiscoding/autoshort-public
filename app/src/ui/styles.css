@@ -240,6 +240,8 @@ code { background: var(--panel2); padding: 0 4px; border-radius: 4px; font-size:
 .word:hover { background: var(--hover); }
 .word.cut { text-decoration: line-through; color: color-mix(in srgb, var(--err) 65%, transparent); }
 .word.hl { background: var(--accent); color: #fff; }
+/* Deleted from the captions: still heard, not shown. */
+.word.nocap { opacity: 0.45; outline: 1px dashed var(--muted, currentColor); outline-offset: -1px; }
 .word.low { border-bottom: 2px dotted var(--warn); }
 .word.corrected { border-bottom: 2px solid var(--blue); }
 .word.selected { outline: 2px solid var(--blue); }

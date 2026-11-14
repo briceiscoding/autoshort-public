@@ -196,6 +196,9 @@
           },
           "keyword": {
             "type": "boolean"
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "required": [

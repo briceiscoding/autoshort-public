@@ -23,6 +23,7 @@ class Word(Strict):
     original: Optional[str] = None
     blockStart: Optional[bool] = None
     highlight: Optional[bool] = None
+    hidden: Optional[bool] = None
     keyword: Optional[bool] = None
 
 

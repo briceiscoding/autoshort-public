@@ -286,9 +286,14 @@ export const lintPlan = (plan: Plan, theme: Theme, analysis: Analysis | null | u
 	/* ---- duration and hook ---- */
 	if (edl.durationAfter > theme.format.targetDurationS)
 		add({rule: 'duration', severity: 'warning', message: `Output lasts ${edl.durationAfter.toFixed(2)} s, above the ${theme.format.targetDurationS} s target`, time: theme.format.targetDurationS});
-	const firstWord = edl.captions[0]?.words[0];
+	// Spoken words, captioned or not: a caption deleted from the screen is still heard, it is no pause.
+	const spoken = [...plan.words]
+		.filter((w) => segmentOfWord(segments, w))
+		.sort((a, b) => a.start - b.start)
+		.map((w) => ({start: at(w.start), end: at(w.end)}));
+	const firstWord = spoken[0];
 	if (firstWord && firstWord.start > 0.3) add({rule: 'hook', severity: 'warning', message: `First word at ${firstWord.start.toFixed(2)} s: dead time in the hook`, time: 0});
-	const hookWords = edl.captions.flatMap((b) => b.words).filter((w) => w.start < 2);
+	const hookWords = spoken.filter((w) => w.start < 2);
 	for (let i = 1; i < hookWords.length; i++) {
 		if (hookWords[i].start - hookWords[i - 1].end > 0.4)
 			add({rule: 'hook', severity: 'warning', message: `Pause of ${(hookWords[i].start - hookWords[i - 1].end).toFixed(2)} s in the first 2 s`, time: hookWords[i - 1].end});

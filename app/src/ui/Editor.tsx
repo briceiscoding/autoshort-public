@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {registerCustomDiagrams} from '../composition/custom/registry';
 import {buildEdl} from '../edl/buildEdl';
 import {keptSegments} from '../edl/time';
+import type {Edl} from '../edl/types';
 import {lintPlan} from '../lint/lint';
 import type {Analysis} from '../model/analysis';
 import {parsePlan} from '../model/plan';
@@ -13,7 +14,7 @@ import {FreeLinks, HomeFooter, SocialLinks} from './links';
 import {DerivedContext, fmtTime, player, type Derived} from './context';
 import {FileDrop} from './FileDrop';
 import {editor, useEditor} from './editorStore';
-import {removeEvent, type EventKind} from './ops';
+import {captionBlockIds, removeEvent, setCaptionsHidden, type EventKind} from './ops';
 import {Inspector} from './Inspector';
 import {ClaudePanel} from './Claude';
 import {CatalogPanel, HistoryPanel, JobsPanel, LintPanel, TranscriptPanel} from './Panels';
@@ -56,6 +57,8 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 	const canUndo = useEditor((s) => s.past.length > 0);
 	const canRedo = useEditor((s) => s.future.length > 0);
 	const selection = useEditor((s) => s.selection);
+	// The EDL on screen, for the Delete key (it removes the caption block shown, which also splits at sentence ends).
+	const edlRef = useRef<Edl | null>(null);
 
 	const reload = useCallback(async () => {
 		try {
@@ -143,6 +146,15 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 				} else if (sel?.kind === 'subscribe') {
 					editor.apply((p) => ({...p, subscribe: null}));
 					editor.select(null);
+				} else if (sel?.kind === 'word') {
+					// A word (or a caption bar of the timeline): its caption block leaves the screen, the speech stays.
+					// A Shift+click range of the Transcript: exactly those words.
+					editor.apply((p) => {
+						if (!sel.lastId) return edlRef.current ? setCaptionsHidden(p, captionBlockIds(edlRef.current, sel.id), true) : p;
+						const words = [...p.words].sort((a, b) => a.start - b.start);
+						const [i, j] = [words.findIndex((w) => w.id === sel.id), words.findIndex((w) => w.id === sel.lastId)].sort((a, b) => a - b);
+						return i < 0 ? p : setCaptionsHidden(p, words.slice(i, j + 1).map((w) => w.id), true);
+					});
 				}
 			} else if (e.key === 'Home' || e.key === 'End') {
 				e.preventDefault();
@@ -179,6 +191,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 			reloadPlan: reload,
 		};
 	}, [plan, video, slug, sfxFiles, refreshMeta, reload]);
+	edlRef.current = derived?.edl ?? null;
 
 	if (error) return <div className="home"><p className="error">{error}</p><a href="#/">Back</a></div>;
 	if (!video) return <div className="home">Loading {slug}…</div>;

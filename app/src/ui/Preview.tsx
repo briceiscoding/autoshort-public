@@ -2,7 +2,7 @@
 import {Player, type PlayerRef} from '@remotion/player';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {activeBlock, layoutBlock} from '../composition/Captions';
-import {bgRect, captionRect, conceptRect, fullRect, logoRect, screenRect, snapToCenter, type Rect} from '../composition/geometry';
+import {bgRect, subscribeRect, captionRect, conceptRect, fullRect, logoRect, screenRect, snapToCenter, type Rect} from '../composition/geometry';
 import {Main, peakAudioTags, type MainProps} from '../composition/Main';
 import {round3} from '../edl/time';
 import type {CutIn, Logo, Plan} from '../model/plan';
@@ -28,11 +28,11 @@ export const Preview: React.FC = () => {
 		if (!el) return;
 		const ro = new ResizeObserver(() => {
 			const h = el.clientHeight - 8;
-			setWidth(Math.max(90, Math.min(el.clientWidth - 8, (h * 9) / 16)));
+			setWidth(Math.max(90, Math.min(el.clientWidth - 8, (h * edl.width) / edl.height)));
 		});
 		ro.observe(el);
 		return () => ro.disconnect();
-	}, []);
+	}, [edl.width, edl.height]);
 
 	// The Remotion player moves the focus to its play button by itself (on load, on play/pause), which makes the
 	// browser draw a focus ring on it. Keep that focus only when the user reached the button with Tab.
@@ -88,7 +88,7 @@ export const Preview: React.FC = () => {
 
 	const durationInFrames = Math.max(1, Math.round(edl.durationAfter * edl.fps));
 	durationRef.current = durationInFrames;
-	const height = (width * 16) / 9;
+	const height = (width * edl.height) / edl.width;
 
 	return (
 		<div className="preview">
@@ -191,7 +191,7 @@ const useDraggable = (): Draggable | null => {
 				rotation: {angle: asset.rotate ?? 0, patch: (angle) => (p) => updateEvent<CutIn>(p, 'cutIn', asset.id, {rotate: angle || undefined})},
 			};
 		}
-		const rect = asset.mode === 'bg' ? bgRect(asset) : screenRect(asset, theme);
+		const rect = asset.mode === 'bg' ? bgRect(asset, theme) : screenRect(asset, theme);
 		const {cx, cy} = center(rect);
 		return {
 			rect,
@@ -204,7 +204,7 @@ const useDraggable = (): Draggable | null => {
 	if (selection?.kind === 'subscribe' && plan.subscribe && edl.overlaySubscribe) {
 		const o = edl.overlaySubscribe;
 		if (time < o.start - 0.01) return null;
-		const rect = {x: o.x, y: o.y, w: edl.width * o.scale, h: edl.height * o.scale};
+		const rect = subscribeRect(o);
 		const {cx, cy} = center(rect);
 		const setSub = (p: Plan, patch: Partial<NonNullable<Plan['subscribe']>>): Plan => (p.subscribe ? {...p, subscribe: {...p.subscribe, ...patch}} : p);
 		return {
@@ -214,7 +214,8 @@ const useDraggable = (): Draggable | null => {
 				if (mode === 'move') return setSub(p, {x: Math.round(o.x + dx), y: Math.round(o.y + dy)});
 				// Resize around the centre.
 				const scale = Math.min(1.5, Math.max(0.08, (o.scale * (rect.w + dx * 2)) / rect.w));
-				return setSub(p, {scale: round3(scale), x: Math.round(cx - (edl.width * scale) / 2), y: Math.round(cy - (edl.height * scale) / 2)});
+				const box = subscribeRect({x: 0, y: 0, scale});
+				return setSub(p, {scale: round3(scale), x: Math.round(cx - box.w / 2), y: Math.round(cy - box.h / 2)});
 			},
 			rotation: {angle: o.rotate ?? 0, patch: (angle) => (p) => setSub(p, {rotate: angle || undefined})},
 		};

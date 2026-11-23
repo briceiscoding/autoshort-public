@@ -8,6 +8,7 @@ settings.local.json
 launcher/.shortcut-created
 .pytest_cache/
 app/src/composition/custom/registry.generated.ts
+app/src/composition/formats/style.generated.ts
 render-bundle/
 logs/
 projects/*

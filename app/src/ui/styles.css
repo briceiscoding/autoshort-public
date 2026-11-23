@@ -527,3 +527,16 @@ a.icon-btn:hover { color: var(--text); background: var(--hover); }
 .home > :nth-last-child(2) { margin-bottom: 36px; }
 .home > .video-grid { margin-top: 0; }
 .word.kw { color: var(--accent); font-weight: 700; text-transform: uppercase; }
+
+/* YouTube 16:9 style page */
+.youtube-style .kit-section { margin-bottom: 20px; }
+.style-refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 10px 0; min-height: 60px; }
+.style-ref { position: relative; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.style-ref img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #0d0d10; }
+.style-ref .icon-btn { position: absolute; top: 6px; right: 6px; background: rgba(0, 0, 0, 0.6); color: #fff; }
+.style-sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin: 10px 0; }
+.style-sheet figure { margin: 0; }
+.style-sheet img { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; display: block; }
+.style-description { white-space: pre-wrap; margin: 8px 0; }
+.youtube-style textarea { width: 100%; box-sizing: border-box; margin-top: 4px; }
+.job-log { white-space: pre-wrap; max-height: 220px; overflow: auto; }

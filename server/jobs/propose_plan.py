@@ -146,17 +146,23 @@ def build_prompt(video: Path, plan: dict, theme: dict, feedback: str = "") -> st
     charte = load_config().library_root / "charte.md"
     rules = charte.read_text(encoding="utf-8", errors="replace")[:9000] if charte.exists() else ""
     notes = (video / "assets" / "notes.md")
-    return f"""You are proposing the edit plan of a French face cam short (9:16) as DATA, for a human to review in an editor.
+    landscape = (plan.get("output") or {}).get("format") == "landscape"
+    what = ("YouTube video in long format (16:9, 1920x1080)" if landscape else "short (9:16)")
+    per = "per video" if landscape else "per short"
+    images = ('Images: 16:9 pictures can go in "full" mode (full frame); other shapes go in "screen" mode (a card on the '
+              'side of the speaker).' if landscape else
+              'Images: landscape pictures go in "screen" mode; "full" only for 9:16 pictures (use shake 6 and dim 0.3 for a hook picture).')
+    return f"""You are proposing the edit plan of a French face cam {what} as DATA, for a human to review in an editor.
 Never invent caption text: corrections only fix misheard technical words. Refer to words by their id.
 
 Output duration target: {theme['format']['targetDurationS']} s maximum. Rules: one event at a time among assets, diagrams,
 logos and concepts; concepts (1 to 3 words, display font) at most one every {theme['concepts']['minSpacingS']} s, 2 to 5 per video;
 highlights at most 1 per caption block and never in two consecutive blocks (numbers, tool names, meaning or contrast words);
 caption blocks (blockStarts, only if you re-split): {theme['captions']['minWords']} to {theme['captions']['maxWords']} words and {theme['captions']['maxLineChars']} characters at most, shown on {theme['captions'].get('maxLines', 2)} line(s);
-diagrams 0 to 2 per short, {theme['diagrams']['minS']} to {theme['diagrams']['maxS']} s, only when a mechanism, flow, comparison or
+diagrams 0 to 2 {per}, {theme['diagrams']['minS']} to {theme['diagrams']['maxS']} s, only when a mechanism, flow, comparison or
 architecture is clearer drawn; every element appears on its trigger word.
 {CUT_RULES}
-Images: landscape pictures go in "screen" mode; "full" only for 9:16 pictures (use shake 6 and dim 0.3 for a hook picture).
+{images}
 A picture may set enter: "pop" (bounce in place) or "top" / "bottom" / "left" / "right" (slides in from that edge); leave it
 out for the default entrance, and use it sparingly (a punchline, a reveal).
 keywords: when the author asks viewers to comment a word (« commente MONTAGE »), give that word's id (it gets its own

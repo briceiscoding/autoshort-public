@@ -21,6 +21,19 @@ const WOBBLE_FRAMES = 6;
 const WOBBLE_SEEDS = 5;
 const WOBBLE_SCALE = 7;
 
+// Drawing area of a diagram laid out for another canvas (a 1080 px wide vertical template inside a 16:9 frame): its
+// content is scaled by `scale` then moved by dx / dy, and its labels fit its own width. Absent: the diagram is drawn on
+// the whole canvas.
+export type DiagramStage = {width: number; dx: number; dy: number; scale: number};
+const StageContext = React.createContext<DiagramStage | null>(null);
+export const DiagramStageProvider = StageContext.Provider;
+// Width the labels and stickers of the current diagram must fit in.
+export const useStageWidth = (): number => {
+	const stage = React.useContext(StageContext);
+	const {width} = useVideoConfig();
+	return stage?.width ?? width;
+};
+
 // Hand-animated "boil": displaces everything it wraps, text included, a few times a second.
 export const Wobble: React.FC<{id: string; children: React.ReactNode}> = ({id, children}) => {
 	const frame = useCurrentFrame();
@@ -42,6 +55,7 @@ export const SchemaCanvas: React.FC<{children: React.ReactNode; id?: string}> = 
 	const theme = useTheme();
 	const frame = useCurrentFrame();
 	const {fps, width, height} = useVideoConfig();
+	const stage = React.useContext(StageContext);
 	const grid = theme.diagrams.grid;
 	const gridOpacity = interpolate(frame / fps, [0, GRID_FADE_S], [0, 1], clamp);
 	const lines: React.ReactNode[] = [];
@@ -77,7 +91,7 @@ export const SchemaCanvas: React.FC<{children: React.ReactNode; id?: string}> = 
 					</g>
 				</g>
 				<TintContext.Provider value={`${id}-tint`}>
-					<Wobble id={`${id}-wobble`}>{children}</Wobble>
+					<Wobble id={`${id}-wobble`}>{stage ? <g transform={`translate(${stage.dx} ${stage.dy}) scale(${stage.scale})`}>{children}</g> : children}</Wobble>
 				</TintContext.Provider>
 			</svg>
 		</AbsoluteFill>
@@ -152,7 +166,8 @@ export const Label: React.FC<{
 }> = ({x, y, text, start, size = 60, color, anchor = 'middle'}) => {
 	const theme = useTheme();
 	const frame = useCurrentFrame();
-	const {fps, width} = useVideoConfig();
+	const {fps} = useVideoConfig();
+	const width = useStageWidth();
 	const opacity = interpolate(frame / fps, [start, start + TEXT_FADE_S], [0, 1], clamp);
 	const lines = labelLines(text);
 	// Never past the frame: the widest line shrinks the text to the room left on its side of the anchor.
@@ -226,7 +241,7 @@ export const StickerBox: React.FC<
 	Common & {x: number; y: number; w: number; h: number; label?: string; labelY?: number; size?: number; labelColor?: string; iconSpace?: number; maxW?: number}
 > = ({label, labelY, size = 60, labelColor, iconSpace, maxW, ...rest}) => {
 	const theme = useTheme();
-	const {width} = useVideoConfig();
+	const width = useStageWidth();
 	const {x: x0, y: y0, w: w0, h: h0, ...common} = rest;
 	const fit = stickerFit({x: x0, y: y0, w: w0, h: h0}, label ?? '', size, theme.fonts.display.family, {iconSpace, maxW, canvasWidth: width});
 	const {x, y, w, h} = fit;

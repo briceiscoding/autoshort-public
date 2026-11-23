@@ -1,0 +1,72 @@
+{
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "targetDurationS": 1200
+  },
+  "textStyles": {
+    "caption": {
+      "size": 58,
+      "x": 960,
+      "y": 940,
+      "maxWidth": 1400
+    },
+    "highlight": {
+      "size": 58,
+      "x": 960,
+      "y": 940,
+      "maxWidth": 1400
+    },
+    "keyword": {
+      "size": 58,
+      "x": 960,
+      "y": 940,
+      "maxWidth": 1400
+    },
+    "concept": {
+      "size": 104,
+      "x": 960,
+      "y": 150,
+      "maxWidth": 1500
+    }
+  },
+  "safeZone": {
+    "x0": 96,
+    "x1": 1824,
+    "y0": 54,
+    "y1": 1026
+  },
+  "captions": {
+    "maxWords": 5,
+    "maxLineChars": 34,
+    "maxLines": 1
+  },
+  "logos": {
+    "size": 160,
+    "centerX": 960,
+    "centerY": 150
+  },
+  "screen": {
+    "maxWidth": 1180,
+    "maxHeight": 680,
+    "left": 370,
+    "centerY": 470
+  },
+  "bg": {
+    "width": 1100,
+    "centerX": 960,
+    "centerY": 450
+  },
+  "diagrams": {
+    "maxBottomY": 880,
+    "maxElements": 6
+  },
+  "zoom": {
+    "originY": 400
+  },
+  "subscribe": {
+    "scale": 0.3,
+    "x": 1500,
+    "y": -60
+  }
+}

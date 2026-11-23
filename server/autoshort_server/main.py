@@ -7,11 +7,11 @@ from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
-from . import library as brand_library, settings, store
+from . import formats, library as brand_library, settings, store, style
 from .config import APP, load_config
 from .jobs import JobManager
 from .lifecycle import Lifecycle
-from .pipelines import JOB_TYPES
+from .pipelines import JOB_TYPES, STYLE_JOB_SLUG, style_steps
 
 app = FastAPI(title="AutoShort")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -77,7 +77,7 @@ def videos():
 @app.post("/api/videos")
 def create_video(body: dict = Body(...)):
     try:
-        return store.create_project(str(body.get("name", "")))
+        return store.create_project(str(body.get("name", "")), body.get("format"))
     except store.StoreError as err:
         fail(err)
 
@@ -251,17 +251,82 @@ async def upload_subscribe_overlay(name: str, request: Request):
 
 
 @app.get("/api/theme")
-def get_theme():
-    return store.load_theme()
+def get_theme(format: str = "short"):
+    try:
+        return store.load_theme(formats.check_format(format))
+    except formats.FormatError as err:
+        fail(err)
 
 
 @app.patch("/api/theme")
-def patch_theme(patch: dict = Body(...)):
-    """Change the default theme of every video (theme/theme.json), e.g. a text style saved as the default."""
+def patch_theme(patch: dict = Body(...), format: str = "short"):
+    """Change the default theme of every video of a format (theme/theme.json for the shorts,
+    theme/theme.landscape.json for YouTube 16:9), e.g. a text style saved as the default."""
     try:
-        return brand_library.patch_theme(patch)
-    except brand_library.LibraryError as err:
+        return brand_library.patch_theme(patch, formats.check_format(format))
+    except (formats.FormatError, brand_library.LibraryError) as err:
         fail(err)
+
+
+# ---------------- YouTube 16:9 style made from the references (theme/landscape) ----------------
+
+@app.get("/api/style")
+def get_style():
+    return {**style.state(), "jobs": jobs.list(STYLE_JOB_SLUG)}
+
+
+@app.put("/api/style/refs/{name}")
+async def add_style_ref(name: str, request: Request):
+    """A reference: a screenshot, or a short clip (frames are taken from it). The body is the raw file."""
+    try:
+        return {"files": style.add_reference(name, await request.body())}
+    except style.StyleError as err:
+        fail(err)
+
+
+@app.delete("/api/style/refs/{name}")
+def delete_style_ref(name: str):
+    try:
+        style.delete_reference(name)
+    except style.StyleError as err:
+        fail(err, 404)
+    return {"ok": True}
+
+
+@app.put("/api/style/notes")
+def put_style_notes(body: dict = Body(...)):
+    """{note?: the overall wish, refs?: {file: note}}"""
+    try:
+        return style.set_notes(body.get("note"), body.get("refs"))
+    except style.StyleError as err:
+        fail(err)
+
+
+@app.post("/api/style/jobs/{mode}")
+def start_style_job(mode: str, params: dict = Body(default={})):
+    try:
+        return jobs.submit(STYLE_JOB_SLUG, f"style-{mode}", style_steps(mode, params or {})).public()
+    except RuntimeError as err:
+        fail(err)
+
+
+@app.post("/api/style/restore/{version}")
+def restore_style(version: str):
+    """Put a previous version of the style back (the current one is kept, so this can be undone)."""
+    if any(j["slug"] == STYLE_JOB_SLUG for j in jobs.busy()):
+        fail(RuntimeError("the style is being changed: wait for the job to finish"), 409)
+    try:
+        return {"kept": style.restore(version), "state": style.state()}
+    except style.StyleError as err:
+        fail(err, 404)
+
+
+@app.get("/style-files/{path:path}")
+def style_files(path: str):
+    try:
+        return FileResponse(style.style_file(path), headers={"Cache-Control": "no-cache"})
+    except style.StyleError as err:
+        fail(err, 404)
 
 
 @app.post("/api/videos/{slug}/jobs/{job_type}")

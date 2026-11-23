@@ -384,7 +384,7 @@ const CutInInspector: React.FC<{cutIn: CutIn}> = ({cutIn}) => {
 				<span>Display mode</span>
 				<select value={cutIn.mode} onChange={(e) => set({mode: e.target.value as CutIn['mode']})}>
 					<option value="screen">screen (floating card over the blurred video)</option>
-					<option value="full">full (full frame, 9:16 only)</option>
+					<option value="full">full (full frame, same shape as the video)</option>
 					<option value="bg">bg (behind the head: the speaker is cut out and stays in front)</option>
 				</select>
 			</label>

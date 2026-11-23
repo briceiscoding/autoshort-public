@@ -6,13 +6,10 @@ import type {Edl, EdlSegment, EdlSfx} from '../edl/types';
 import type {Analysis} from '../model/analysis';
 import {faceAt} from '../model/analysis';
 import {fontFamilyOf, themeFontFiles, type Theme} from '../model/theme';
-import {CutInLayer, LogoLayer, SubscribeLayer} from './AssetLayer';
-import {Captions} from './Captions';
-import {ConceptText} from './ConceptText';
 import {CompositionProvider, mediaUrl, useLibraryUrl, useTheme, useVideoUrl, type MediaConfig} from './context';
 import {findCustomDiagram} from './custom/registry';
-import {TEMPLATES} from './diagrams/templates';
-import {GaugeLayer} from './GaugeLayer';
+import type {TemplateProps} from './diagrams/templates';
+import {layersOf} from './formats';
 
 export type AudioConfig = {
 	// preview: rush audio + raw SFX/music at approximate volumes; export: prepared voice/music + measured SFX gains.
@@ -142,14 +139,18 @@ const SfxClip: React.FC<{sfx: EdlSfx; gain: number; index: number}> = ({sfx, gai
 	);
 };
 
-const DiagramLayer: React.FC<{diagram: Edl['diagrams'][number]; slug: string}> = ({diagram, slug}) => {
+const DiagramLayer: React.FC<{diagram: Edl['diagrams'][number]; slug: string; templates: Record<string, React.FC<TemplateProps>>}> = ({
+	diagram,
+	slug,
+	templates,
+}) => {
 	const elements = diagram.elements.map((e) => ({...e, start: e.start - diagram.start}));
 	if (diagram.template === 'custom') {
 		const Scene = diagram.component ? findCustomDiagram(slug, diagram.component) : undefined;
 		if (!Scene) return <MissingDiagram name={diagram.component ?? diagram.id} />;
 		return <Scene elements={elements.map((e) => ({label: e.label, kind: e.kind ?? '', trigger: e.trigger ?? '', start: e.start, draw: e.draw}))} />;
 	}
-	const Template = TEMPLATES[diagram.template];
+	const Template = templates[diagram.template];
 	if (!Template) return <MissingDiagram name={diagram.template} />;
 	return <Template elements={elements} id={`d-${diagram.id}`} />;
 };
@@ -163,13 +164,13 @@ const MissingDiagram: React.FC<{name: string}> = ({name}) => (
 const Overlays: React.FC<{edl: Edl; safeZone: boolean; face: boolean; analysis?: Analysis | null}> = ({edl, safeZone, face, analysis}) => {
 	const theme = useTheme();
 	const frame = useCurrentFrame();
-	const {fps, height} = useVideoConfig();
+	const {fps, width, height} = useVideoConfig();
 	const t = frame / fps;
 	const segment = edl.segments.find((s) => t >= s.outStart && t < s.outEnd);
 	const rush = segment ? segment.srcStart + (t - segment.outStart) : null;
 	let box = face && rush !== null ? faceAt(analysis, rush, edl.crop, height) : null;
 	if (box && segment?.zoom) {
-		const [cx, cy, s] = [540, theme.zoom.originY, theme.zoom.scale];
+		const [cx, cy, s] = [width / 2, theme.zoom.originY, theme.zoom.scale];
 		box = [cx + (box[0] - cx) * s, cy + (box[1] - cy) * s, box[2] * s, box[3] * s];
 	}
 	const {x0, x1, y0, y1} = theme.safeZone;
@@ -215,6 +216,8 @@ const Layers: React.FC<MainProps> = ({edl, audio, subscribeFile, mattes, overlay
 	const span = (start: number, end: number) => ({from: toFrame(start), durationInFrames: Math.max(1, toFrame(end) - toFrame(start))});
 	const preview = audio.mode === 'preview';
 	const rush = video(edl.source);
+	// The layers of the video's format (short 9:16 or YouTube 16:9).
+	const {CutIn, Logo, Concept, Captions, Gauge, Subscribe, diagrams} = layersOf(edl.format);
 
 	return (
 		<AbsoluteFill style={{backgroundColor: '#000'}}>
@@ -226,7 +229,7 @@ const Layers: React.FC<MainProps> = ({edl, audio, subscribeFile, mattes, overlay
 
 			{edl.assets.map((asset) => (
 				<Sequence key={asset.id} {...span(asset.start, asset.end)} premountFor={Math.round(fps * 0.5)}>
-					<CutInLayer asset={asset} />
+					<CutIn asset={asset} />
 				</Sequence>
 			))}
 
@@ -238,25 +241,25 @@ const Layers: React.FC<MainProps> = ({edl, audio, subscribeFile, mattes, overlay
 
 			{edl.gauges.map((gauge) => (
 				<Sequence key={gauge.id} {...span(gauge.start, gauge.end)}>
-					<GaugeLayer gauge={gauge} />
+					<Gauge gauge={gauge} />
 				</Sequence>
 			))}
 
 			{edl.diagrams.map((diagram) => (
 				<Sequence key={diagram.id} {...span(diagram.start, diagram.end)}>
-					<DiagramLayer diagram={diagram} slug={edl.slug} />
+					<DiagramLayer diagram={diagram} slug={edl.slug} templates={diagrams} />
 				</Sequence>
 			))}
 
 			{edl.logos.map((logo) => (
 				<Sequence key={logo.id} {...span(logo.start, logo.end)}>
-					<LogoLayer logo={logo} />
+					<Logo logo={logo} />
 				</Sequence>
 			))}
 
 			{edl.concepts.map((concept) => (
 				<Sequence key={concept.id} {...span(concept.start, concept.end)}>
-					<ConceptText text={concept.text} duration={concept.end - concept.start} style={concept.style} />
+					<Concept text={concept.text} duration={concept.end - concept.start} style={concept.style} />
 				</Sequence>
 			))}
 
@@ -264,7 +267,7 @@ const Layers: React.FC<MainProps> = ({edl, audio, subscribeFile, mattes, overlay
 
 			{edl.overlaySubscribe && subscribeFile ? (
 				<Sequence {...span(edl.overlaySubscribe.start, edl.overlaySubscribe.end)}>
-					<SubscribeLayer overlay={edl.overlaySubscribe} src={video(subscribeFile)} />
+					<Subscribe overlay={edl.overlaySubscribe} src={video(subscribeFile)} />
 				</Sequence>
 			) : null}
 

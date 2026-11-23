@@ -10,7 +10,8 @@ import sys
 import time
 from pathlib import Path
 
-from .config import APP, APP_DIR_NAME, SCHEMA_DIR, SERVER, THEME_FILE, load_config
+from .config import APP, APP_DIR_NAME, SCHEMA_DIR, SERVER, load_config
+from .formats import theme_file
 from .jobs import Step
 from .settings import claude_env
 from .store import read_json, video_dir
@@ -65,9 +66,9 @@ def import_steps(slug: str, params: dict) -> list[Step]:
              gpu_py(JOBS_DIR / "gpu_voice_bursts.py", str(rush), str(cache / "bursts.json")),
              skip_if=lambda job: not params.get("bursts") and not _has_gaps(cache), weight=3),
         Step("Face track", app_py("face_track.py", str(rush), str(cache / "face.json")), weight=1.5),
-        Step("Build plan (cuts, captions, assets)", app_py("initial_plan.py", str(video), str(THEME_FILE), *cut_arg(params)),
+        Step("Build plan (cuts, captions, assets)", app_py("initial_plan.py", str(video), str(theme_file(video)), *cut_arg(params)),
              weight=0.5),
-        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(THEME_FILE)), weight=1),
+        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))), weight=1),
     ]
 
 
@@ -89,9 +90,9 @@ def reset_steps(slug: str, params: dict) -> list[Step]:
         raise RuntimeError("nothing to reset: import the video first")
     return [
         Step("Probe rush and type assets", app_py("import_probe.py", str(video), str(rush)), weight=0.5),
-        Step("Build the default plan (replaces the current one)", app_py("initial_plan.py", str(video), str(THEME_FILE), *cut_arg(params)),
+        Step("Build the default plan (replaces the current one)", app_py("initial_plan.py", str(video), str(theme_file(video)), *cut_arg(params)),
              weight=0.5),
-        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(THEME_FILE)), weight=1),
+        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))), weight=1),
     ]
 
 
@@ -123,7 +124,7 @@ def _has_gaps(cache: Path) -> bool:
 def preview_steps(slug: str, params: dict) -> list[Step]:
     cfg = load_config()
     video = video_dir(slug)
-    steps = [Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(THEME_FILE)))]
+    steps = [Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))))]
     plan = read_json(video / APP_DIR_NAME / "plan.json") or {}
     if any(l.get("process") == "rembg" for l in plan.get("logos", [])):
         steps.append(Step("Background removal (rembg)", gpu_py(JOBS_DIR / "gpu_rembg.py", str(video))))
@@ -142,7 +143,7 @@ def propose_steps(slug: str, params: dict) -> list[Step]:
     request.parent.mkdir(parents=True, exist_ok=True)
     request.write_text(json.dumps({"feedback": feedback or None, "at": time.time()}, ensure_ascii=False), encoding="utf-8")
     return [Step("Revision from your feedback (Claude headless)" if feedback else "Plan proposal (Claude headless)",
-                 app_py("propose_plan.py", str(video), str(THEME_FILE), str(SCHEMA_DIR), load_config().claude_command,
+                 app_py("propose_plan.py", str(video), str(theme_file(video)), str(SCHEMA_DIR), load_config().claude_command,
                         *(["--feedback-file", str(request)] if feedback else [])),
                  env=claude_env())]
 
@@ -157,17 +158,17 @@ def export_steps(slug: str, params: dict) -> list[Step]:
     copy = copy_step(video, params)
     return [
         Step("Derive EDL (TS, same code as the preview)",
-             tsx("edl-cli.ts", str(video / APP_DIR_NAME / "plan.json"), str(THEME_FILE), str(edl)), weight=0.2),
+             tsx("edl-cli.ts", str(video / APP_DIR_NAME / "plan.json"), str(theme_file(video)), str(edl)), weight=0.2),
         *preview_steps(slug, params),
         Step("Audio prep (voice loudnorm 2 pass, music ducking, SFX gains)",
-             app_py("prepare_audio.py", str(video), str(edl), str(cfg.library_root), str(THEME_FILE)), weight=1.5),
+             app_py("prepare_audio.py", str(video), str(edl), str(cfg.library_root), str(theme_file(video))), weight=1.5),
         Step("Render (Remotion)",
-             tsx("render.ts", "--video", str(video), "--edl", str(edl), "--theme", str(THEME_FILE),
+             tsx("render.ts", "--video", str(video), "--edl", str(edl), "--theme", str(theme_file(video)),
                  "--video-base", video_base, "--library-base", library_base, "--out", str(render / "render.mp4"),
                  *(["--frames", params["frames"]] if params.get("frames") else [])),
              cwd=APP, weight=8),
         Step("Limiter, loudness, versioned output, SRT, control frames",
-             app_py("finalize_export.py", str(video), str(edl), str(THEME_FILE)), weight=1),
+             app_py("finalize_export.py", str(video), str(edl), str(theme_file(video))), weight=1),
         *copy,
     ]
 
@@ -186,6 +187,30 @@ def copy_step(video: Path, params: dict) -> list[Step]:
     name = str(params.get("name") or "").strip() or video.name
     return [Step(f"Copy to {folder}", app_py("copy_export.py", str(video), str(folder), name, "1" if params.get("srt", True) else "0"),
                  weight=0.3)]
+
+
+STYLE_JOB_SLUG = "~style"  # jobs of the YouTube 16:9 style (one at a time), apart from the projects' jobs
+STYLE_MODES = ("create", "revise", "sheet")
+
+
+def style_steps(mode: str, params: dict) -> list[Step]:
+    """The YouTube 16:9 style from the references (create), a revision from the author's feedback (revise), or only
+    the control sheet of the current style (sheet). See server/jobs/style_job.py."""
+    if mode not in STYLE_MODES:
+        raise RuntimeError(f"unknown style job {mode}")
+    feedback = str(params.get("feedback") or "").strip()[:4000]
+    if mode == "revise" and not feedback:
+        raise RuntimeError("write what to change in the style first")
+    args = [mode]
+    if feedback:
+        request = load_config().projects_root / ".style-sheet" / "data" / "cache" / "style_request.json"
+        request.parent.mkdir(parents=True, exist_ok=True)
+        request.write_text(json.dumps({"feedback": feedback, "at": time.time()}, ensure_ascii=False), encoding="utf-8")
+        args += ["--feedback-file", str(request)]
+    names = {"create": "YouTube style from the references (Claude headless)",
+             "revise": "YouTube style revision from your feedback (Claude headless)",
+             "sheet": "Control sheet of the YouTube style"}
+    return [Step(names[mode], app_py("style_job.py", *args), cwd=APP, env=claude_env() if mode != "sheet" else None)]
 
 
 JOB_TYPES = {

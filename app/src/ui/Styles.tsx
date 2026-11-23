@@ -169,7 +169,14 @@ const DEFAULT_SHADOW = {x: 0, y: 6, blur: 14, color: '#000000', opacity: 0.5};
 const DEFAULT_BACKGROUND = {color: '#000000', opacity: 1, radius: 14, padX: 14, padY: 6};
 const DEFAULT_BORDER = {width: 6, color: '#FFFFFF', opacity: 1};
 
-export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStylePatch) => void; position?: boolean; quotes?: boolean}> = ({style, onChange, position = true, quotes = false}) => {
+// canvas: size of the video (format width x height) for the position sliders.
+export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStylePatch) => void; position?: boolean; quotes?: boolean; canvas?: {width: number; height: number}}> = ({
+	style,
+	onChange,
+	position = true,
+	quotes = false,
+	canvas = {width: 1080, height: 1920},
+}) => {
 	const {stroke, shadow, background} = style;
 	return (
 		<div className="style-editor">
@@ -265,10 +272,10 @@ export const StyleEditor: React.FC<{style: TextStyle; onChange: (patch: TextStyl
 				<fieldset>
 					<legend>Position (or drag it on the preview)</legend>
 					<div className="row">
-						<Slider label="Centre x" value={style.x} min={0} max={1080} onChange={(x) => onChange({x})} />
-						<Slider label="Centre y" value={style.y} min={0} max={1920} onChange={(y) => onChange({y})} />
+						<Slider label="Centre x" value={style.x} min={0} max={canvas.width} onChange={(x) => onChange({x})} />
+						<Slider label="Centre y" value={style.y} min={0} max={canvas.height} onChange={(y) => onChange({y})} />
 					</div>
-					<Slider label="Max width" value={style.maxWidth} min={200} max={1080} unit="px" onChange={(maxWidth) => onChange({maxWidth})} />
+					<Slider label="Max width" value={style.maxWidth} min={200} max={canvas.width} unit="px" onChange={(maxWidth) => onChange({maxWidth})} />
 				</fieldset>
 			) : null}
 		</div>
@@ -356,6 +363,8 @@ export const StylesPanel: React.FC = () => {
 	const selection = useEditor((s) => s.selection);
 	const plan = useEditor((s) => s.plan)!;
 	const {theme, reload} = useDerived();
+	// The defaults are per format: theme.json for the shorts, theme.landscape.json for YouTube 16:9.
+	const format = plan.output?.format ?? 'short';
 	const [saving, setSaving] = useState(false);
 	const [message, setMessage] = useState('');
 	const target: Target = selection?.kind === 'textStyle' ? selection.target : 'caption';
@@ -380,10 +389,10 @@ export const StylesPanel: React.FC = () => {
 		setSaving(true);
 		setMessage('');
 		try {
-			await api.patchTheme({[group]: {[target]: isFrame(target) ? theme.frameStyles[target] : theme.textStyles[target]}});
+			await api.patchTheme({[group]: {[target]: isFrame(target) ? theme.frameStyles[target] : theme.textStyles[target]}}, format);
 			await reload();
 			apply(clear);
-			setMessage('Saved as the default of every video.');
+			setMessage(format === 'landscape' ? 'Saved as the default of every YouTube 16:9 video.' : 'Saved as the default of every short.');
 		} catch (e) {
 			setMessage(String(e instanceof Error ? e.message : e));
 		} finally {
@@ -409,8 +418,8 @@ export const StylesPanel: React.FC = () => {
 						Back to the default
 					</button>
 				) : null}
-				<button className="small primary" disabled={!overridden || saving} onClick={saveAsDefault} title="Write this style in theme/theme.json">
-					{saving ? 'Saving…' : 'Save as default for all videos'}
+				<button className="small primary" disabled={!overridden || saving} onClick={saveAsDefault} title={format === 'landscape' ? 'Write this style in theme/theme.landscape.json' : 'Write this style in theme/theme.json'}>
+					{saving ? 'Saving…' : format === 'landscape' ? 'Save as default for all 16:9 videos' : 'Save as default for all shorts'}
 				</button>
 			</div>
 			{message ? <p className="small muted">{message}</p> : null}
@@ -427,7 +436,7 @@ export const StylesPanel: React.FC = () => {
 			{isFrame(target) ? (
 				<FrameEditor frame={theme.frameStyles[target]} onChange={(patch) => apply((p) => ops.setVideoFrame(p, target, patch))} />
 			) : (
-				<StyleEditor style={theme.textStyles[target]} position={target !== 'highlight' && target !== 'keyword'} quotes={target === 'keyword'} onChange={(patch) => apply((p) => ops.setVideoStyle(p, target, patch))} />
+				<StyleEditor style={theme.textStyles[target]} position={target !== 'highlight' && target !== 'keyword'} quotes={target === 'keyword'} canvas={theme.format} onChange={(patch) => apply((p) => ops.setVideoStyle(p, target, patch))} />
 			)}
 		</div>
 	);
@@ -435,7 +444,7 @@ export const StylesPanel: React.FC = () => {
 
 // Inspector section of one concept: its own look, or the concept style of the video.
 export const ConceptStyleSection: React.FC<{concept: Concept}> = ({concept}) => {
-	const {edl} = useDerived();
+	const {edl, theme} = useDerived();
 	const resolved = edl.concepts.find((c) => c.id === concept.id)?.style;
 	const [open, setOpen] = useState(Boolean(concept.style));
 	if (!resolved) return null;
@@ -461,7 +470,7 @@ export const ConceptStyleSection: React.FC<{concept: Concept}> = ({concept}) => 
 					Edit all concepts…
 				</button>
 			</div>
-			{open ? <StyleEditor style={resolved} onChange={(patch) => apply((p) => ops.setConceptStyle(p, concept.id, patch))} /> : null}
+			{open ? <StyleEditor style={resolved} canvas={theme.format} onChange={(patch) => apply((p) => ops.setConceptStyle(p, concept.id, patch))} /> : null}
 			<p className="muted small">Drag the concept on the preview to move it, drag its corner to resize it.</p>
 		</fieldset>
 	);

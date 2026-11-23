@@ -168,6 +168,7 @@ class Source(Strict):
 
 class Output(Strict):
     fps: Optional[float] = None
+    format: Optional[Literal["short", "landscape"]] = None  # absent = short (9:16)
 
 
 class SfxRules(Strict):

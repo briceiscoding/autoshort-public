@@ -1218,6 +1218,27 @@
       ],
       "additionalProperties": false
     },
+    "bg": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "centerX": {
+          "type": "number"
+        },
+        "centerY": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "centerX",
+        "centerY"
+      ],
+      "additionalProperties": false
+    },
     "diagrams": {
       "type": "object",
       "properties": {

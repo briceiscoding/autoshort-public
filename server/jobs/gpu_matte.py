@@ -26,7 +26,7 @@ from model import MattingNetwork  # noqa: E402
 WEIGHTS_URL = "https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth"
 WEIGHTS = REPO / "ai" / "models" / "rvm_mobilenetv3.pth"
 MARGIN_S = 0.5
-MAX_HEIGHT = 1920  # never more than the output canvas needs
+MAX_HEIGHT = 1920  # never more than the output canvas needs (short: 1920 px high)
 BATCH = 8
 
 
@@ -59,10 +59,19 @@ def load_model() -> MattingNetwork:
     return model.to(torch_device())
 
 
+def max_height(plan: dict, probe: dict) -> float:
+    """Source height the canvas actually shows: 1920 for a short (legacy), for a 16:9 video the 1080 px canvas over
+    the crop window, scaled back to the full source height."""
+    if (plan.get("output") or {}).get("format") != "landscape":
+        return MAX_HEIGHT
+    crop_h = (plan.get("source") or {}).get("crop", {}).get("height") or probe["height"]
+    return 1080 * probe["height"] / crop_h
+
+
 def matte_range(model: MattingNetwork, rush: Path, probe: dict, a: float, b: float, out: Path,
-                report=lambda f: None) -> None:
+                report=lambda f: None, limit: float = MAX_HEIGHT) -> None:
     fps = probe["fps"]
-    scale = min(1.0, MAX_HEIGHT / probe["height"])
+    scale = min(1.0, limit / probe["height"])
     w = int(round(probe["width"] * scale / 2)) * 2
     h = int(round(probe["height"] * scale / 2)) * 2
     frames = max(1, int(round((b - a) * fps)))
@@ -130,7 +139,8 @@ def main() -> None:
         out = folder / f"{int(a * 1000):07d}_{int(b * 1000):07d}.webm"
         print(f"matting {a:.2f}-{b:.2f} s -> {out.name}", flush=True)
         matte_range(model, rush, probe, a, b, out,
-                    lambda f, a=a, b=b, base=elapsed: progress((base + f * (b - a)) / total, f"matting {a:.1f}-{b:.1f} s"))
+                    lambda f, a=a, b=b, base=elapsed: progress((base + f * (b - a)) / total, f"matting {a:.1f}-{b:.1f} s"),
+                    max_height(plan, probe))
         elapsed += b - a
         index = [m for m in index if not (a <= m["start"] and m["end"] <= b)]
         index.append({"file": f"data/cache/matte/{out.name}", "start": a, "end": b})

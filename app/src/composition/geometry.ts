@@ -45,11 +45,33 @@ export const screenRect = (asset: Pick<EdlAsset, 'aspect' | 'x' | 'y' | 'width'>
 	return {x: cx - w / 2, y: cy - h / 2, w, h};
 };
 
+// Default card behind the head (theme bg, absent in the shorts theme: 900 px wide at 540 x 650).
+export const bgDefaults = (theme?: Pick<Theme, 'bg'>) => theme?.bg ?? {width: 900, centerX: 540, centerY: 650};
+
 // Card behind the head (bg mode): centre x / y and width, height from the picture's aspect.
-export const bgRect = (asset: Pick<EdlAsset, 'aspect' | 'x' | 'y' | 'width'>): Rect => {
-	const w = asset.width ?? 900;
+export const bgRect = (asset: Pick<EdlAsset, 'aspect' | 'x' | 'y' | 'width'>, theme?: Pick<Theme, 'bg'>): Rect => {
+	const d = bgDefaults(theme);
+	const w = asset.width ?? d.width;
 	const h = asset.aspect ? w / asset.aspect : w;
-	return {x: (asset.x ?? 540) - w / 2, y: (asset.y ?? 650) - h / 2, w, h};
+	return {x: (asset.x ?? d.centerX) - w / 2, y: (asset.y ?? d.centerY) - h / 2, w, h};
+};
+
+// The subscribe reminder is a 1080 x 1920 keyed clip: its box is that size times the overlay scale, on every format.
+export const SUBSCRIBE_CLIP = {width: 1080, height: 1920};
+export const subscribeRect = (overlay: {x: number; y: number; scale: number}): Rect => ({
+	x: overlay.x,
+	y: overlay.y,
+	w: SUBSCRIBE_CLIP.width * overlay.scale,
+	h: SUBSCRIBE_CLIP.height * overlay.scale,
+});
+
+// A picture can fill the frame only when its shape is close to the canvas (same rule as server/jobs/initial_plan.py):
+// a short keeps the legacy rule (nothing wider than 3:4), a 16:9 video also refuses pictures much taller than it.
+export const fullFrameFits = (aspect: number, canvas: {width: number; height: number}): boolean => {
+	const canvasAspect = canvas.width / canvas.height;
+	if (canvasAspect < 1) return aspect <= 0.75;
+	const ratio = aspect / canvasAspect;
+	return ratio >= 0.75 && ratio <= 4 / 3;
 };
 
 // Full frame picture: the 1080x1920 frame scaled by zoom from its bottom edge, then moved by x / y from the centre.

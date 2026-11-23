@@ -4,7 +4,7 @@ import {AbsoluteFill, Easing, Img, OffthreadVideo, interpolate, useCurrentFrame,
 import type {EdlAsset, EdlLogo, EdlOverlay} from '../edl/types';
 import {frameCss} from '../model/theme';
 import {useTheme, useVideoUrl} from './context';
-import {bgRect, fullRect, logoRect, screenRect} from './geometry';
+import {bgDefaults, bgRect, fullRect, logoRect, screenRect, subscribeRect} from './geometry';
 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 const easeOut = Easing.out(Easing.cubic);
@@ -67,7 +67,7 @@ export const CutInLayer: React.FC<{asset: EdlAsset}> = ({asset}) => {
 	if (asset.mode === 'bg') {
 		const fade = enter ? 1 : interpolate(time, [0, 0.25], [0, 1], {...clamp, easing: easeOut});
 		const exit = interpolate(time, [total - 0.2, total], [1, 0], clamp);
-		const rect = bgRect(asset);
+		const rect = bgRect(asset, theme);
 		return (
 			<AbsoluteFill style={enterMotion(enter, time, {x: rect.x + rect.w / 2, y: rect.y + rect.h / 2}, size)}>
 				<Img
@@ -78,7 +78,7 @@ export const CutInLayer: React.FC<{asset: EdlAsset}> = ({asset}) => {
 						position: 'absolute',
 						width: rect.w,
 						left: rect.x,
-						top: asset.y ?? 650,
+						top: asset.y ?? bgDefaults(theme).centerY,
 						transform: `translateY(calc(-50% + ${(1 - fade) * 40}px))${asset.rotate ? ` rotate(${asset.rotate}deg)` : ''}`,
 						opacity: fade * exit,
 					}}
@@ -137,8 +137,7 @@ export const SubscribeLayer: React.FC<{overlay: EdlOverlay; src: string}> = ({ov
 	const frame = useCurrentFrame();
 	const {fps, width, height} = useVideoConfig();
 	const time = frame / fps;
-	const w = width * overlay.scale;
-	const h = height * overlay.scale;
+	const {w, h} = subscribeRect(overlay);
 	const centre = {x: overlay.x + w / 2, y: overlay.y + h / 2};
 	const motion = enterMotion(overlay.enter, time, centre, {width, height});
 	const shake = overlay.shake ?? 0;

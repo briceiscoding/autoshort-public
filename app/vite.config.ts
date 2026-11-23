@@ -20,6 +20,8 @@ export default defineConfig({
 			'@kit/schema': resolve(kit, 'schema.tsx'),
 			'@kit/types': resolve(kit, 'types.ts'),
 			'@kit/theme': resolve(kit, 'theme.ts'),
+			// Kit of the YouTube 16:9 style components (theme/landscape/components/*.tsx).
+			'@kit/format': resolve(kit, 'format.ts'),
 		},
 		dedupe: ['react', 'react-dom', 'remotion', 'roughjs', 'path-data-parser'],
 	},
@@ -28,6 +30,6 @@ export default defineConfig({
 		port: config.frontendPort,
 		strictPort: true,
 		fs: {allow: [root, projects]},
-		proxy: {'/api': backend, '/media': backend, '/library': backend},
+		proxy: {'/api': backend, '/media': backend, '/library': backend, '/style-files': backend},
 	},
 });

@@ -161,7 +161,7 @@ export const HELP_SECTIONS: Section[] = [
 				</p>
 				<ul>
 					<li><B>screen</B> : une carte qui flotte sur ta vidéo floutée (idéal pour une capture ou une image paysage).</li>
-					<li><B>full</B> : plein écran (pour une image ou vidéo verticale 9:16).</li>
+					<li><B>full</B> : plein écran (pour une image ou vidéo de la même forme que la vidéo : 9:16 pour un short, 16:9 pour une vidéo YouTube).</li>
 					<li><B>bg</B> : derrière ta tête, tu restes devant (l'app te détoure ; lance « Prepare media » dans Jobs si besoin).</li>
 				</ul>
 				<p>

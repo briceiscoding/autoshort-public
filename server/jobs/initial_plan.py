@@ -21,7 +21,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from common import app_dir, progress, read_json, write_json
+from common import project_format, app_dir, progress, read_json, write_json
 from merge_analysis import merge
 
 SILENCE_S = 0.4
@@ -200,7 +200,19 @@ def kept(spans: list[dict], t: float) -> bool:
     return any(s["keep"] and s["start"] - 0.03 <= t < s["end"] for s in spans)
 
 
-def place_assets(catalog: list[dict], words: list[dict], spans: list[dict]) -> tuple[list, list, list, dict | None]:
+def full_frame_fits(asset: dict, canvas_aspect: float) -> bool:
+    """A picture can fill the frame only when its shape is close to the canvas: a short keeps the legacy rule (nothing
+    wider than 3:4), a 16:9 video also refuses pictures much taller than the frame."""
+    if not asset.get("width") or not asset.get("height"):
+        return True
+    ratio = (asset["width"] / asset["height"]) / canvas_aspect
+    if canvas_aspect < 1:
+        return asset["width"] / asset["height"] <= 0.75
+    return 0.75 <= ratio <= 4 / 3
+
+
+def place_assets(catalog: list[dict], words: list[dict], spans: list[dict],
+                 canvas_aspect: float = 9 / 16) -> tuple[list, list, list, dict | None]:
     logos, cut_ins, unplaced = [], [], []
     music = None
     spoken = [w for w in words if kept(spans, w["start"])]
@@ -235,8 +247,8 @@ def place_assets(catalog: list[dict], words: list[dict], spans: list[dict]) -> t
         if mode == "logo":
             logos.append({"id": f"l{len(logos)}", **item})
         else:
-            if mode == "full" and asset.get("width") and asset["width"] / asset["height"] > 0.75:
-                mode = "screen"  # a landscape picture is never shown full frame
+            if mode == "full" and not full_frame_fits(asset, canvas_aspect):
+                mode = "screen"  # a picture of another shape than the frame is never shown full frame
             cut_ins.append({"id": f"a{len(cut_ins)}", **item, "mode": mode})
     return logos, cut_ins, unplaced, music
 
@@ -253,6 +265,27 @@ def find_cta(words: list[dict], spans: list[dict], phrases: list[str]) -> dict |
     return None
 
 
+def face_centre_y(face: dict | None) -> float | None:
+    """Median height of the face centre over the rush (source pixels), None without a face track."""
+    ys = sorted(s["box"][1] + s["box"][3] / 2 for s in (face or {}).get("samples", []) if s.get("box"))
+    return ys[len(ys) // 2] if ys else None
+
+
+def crop_window(w: int, h: int, canvas_w: int, canvas_h: int, face_y: float | None = None) -> dict:
+    """Window of the rush shown on the canvas, with the canvas proportions.
+    A rush wider than the canvas (or any rush of a short, legacy rule) keeps its full height, centred horizontally.
+    A rush taller than a 16:9 canvas (4:3, filmed vertically) keeps its full width, the face at 40 % of the window
+    height (centred without a face track)."""
+    aspect = canvas_w / canvas_h
+    if canvas_h > canvas_w or w / h >= aspect:
+        crop_w = min(w, round(h * aspect))
+        return {"x": round((w - crop_w) / 2), "y": 0, "width": crop_w, "height": h}
+    crop_h = round(w / aspect)
+    y = round(face_y - crop_h * 0.4) if face_y is not None else round((h - crop_h) / 2)
+    y = min(max(y, 0), h - crop_h)
+    return {"x": 0, "y": y, "width": w, "height": crop_h}
+
+
 def cut_choice(previous: dict | None, theme: dict, choice: str = "") -> bool:
     """Raw rush to cut (True) or already edited (False): the choice given, else the current plan's, else the theme's."""
     if choice in ("raw", "edited"):
@@ -266,7 +299,11 @@ def main() -> None:
     theme = json.loads(theme_file.read_text(encoding="utf-8"))
     previous = read_json(app_dir(video) / "plan.json")
     auto_cuts = cut_choice(previous, theme, sys.argv[3] if len(sys.argv) > 3 else "")
-    vocab = {k: v for k, v in (read_json(theme_file.parent / "vocabulary.json") or {}).items() if not k.startswith("_")}
+    # Next to the theme, else the repo's (a 16:9 theme is resolved into the project's cache).
+    vocab_file = theme_file.parent / "vocabulary.json"
+    if not vocab_file.exists():
+        vocab_file = Path(__file__).resolve().parents[2] / "theme" / "vocabulary.json"
+    vocab = {k: v for k, v in (read_json(vocab_file) or {}).items() if not k.startswith("_")}
     app = app_dir(video)
     cache = app / "cache"
     probe = read_json(cache / "probe.json")
@@ -289,18 +326,21 @@ def main() -> None:
     auto_blocks(spoken, theme["captions"]["maxWords"], theme["captions"]["maxLineChars"])
     progress(0.6, "assets")
     catalog = read_json(cache / "assets.json") or []
-    logos, cut_ins, unplaced, music = place_assets(catalog, words, spans)
+    canvas_w, canvas_h = theme["format"]["width"], theme["format"]["height"]
+    logos, cut_ins, unplaced, music = place_assets(catalog, words, spans, canvas_w / canvas_h)
     cta = find_cta(words, spans, theme["callToAction"])
     sub = theme["subscribe"]
 
-    # Crop: centre a 9:16 window in landscape rushes.
+    # Crop: a window of the canvas proportions (9:16 short or 16:9 YouTube video).
     w, h = probe["width"], probe["height"]
-    crop_w = min(w, round(h * 9 / 16))
+    crop = crop_window(w, h, canvas_w, canvas_h, face_centre_y(read_json(cache / "face.json")))
+    video_format = project_format(video)
     plan = {
         "schemaVersion": 1,
         "slug": video.name,
         "source": {"rush": probe["rush"], "width": w, "height": h, "fps": probe["fps"], "duration": probe["duration"],
-                   "crop": {"x": round((w - crop_w) / 2), "y": 0, "width": crop_w, "height": h}},
+                   "crop": crop},
+        **({"output": {"format": video_format}} if video_format != "short" else {}),
         "assets": catalog,
         "words": words,
         "spans": spans,

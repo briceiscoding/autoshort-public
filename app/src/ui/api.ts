@@ -2,8 +2,12 @@
 import type {Analysis} from '../model/analysis';
 import type {Asset, Plan} from '../model/plan';
 
+// "short" (9:16) or "landscape" (YouTube 16:9), chosen when the project is created.
+export type VideoFormat = 'short' | 'landscape';
+
 export type VideoSummary = {
 	slug: string;
+	format?: VideoFormat;
 	hasPlan: boolean;
 	hasDraft: boolean;
 	rush: string[];
@@ -13,6 +17,7 @@ export type VideoSummary = {
 
 export type VideoState = {
 	slug: string;
+	format?: VideoFormat;
 	plan: Plan | null;
 	draft: Plan | null;
 	analysis: Analysis | null;
@@ -36,6 +41,17 @@ export type ClaudeSettings = {
 	mode: 'subscription' | 'apiKey' | 'login';
 	token: string | null;
 	systemApiKey: boolean;
+};
+
+export type StyleState = {
+	refs: {file: string; note: string}[];
+	note: string;
+	components: string[];
+	description: string | null;
+	fonts: string[];
+	sheet: {name: string; file: string}[];
+	history: {id: string; label: string}[];
+	jobs: JobInfo[];
 };
 
 export type JobInfo = {
@@ -107,7 +123,8 @@ const uploadFile = (slug: string, kind: 'rush' | 'assets', file: File, onProgres
 
 export const api = {
 	videos: () => request<VideoSummary[]>('/api/videos'),
-	createVideo: (name: string) => request<{slug: string}>('/api/videos', {method: 'POST', body: JSON.stringify({name})}),
+	createVideo: (name: string, format: VideoFormat = 'short') =>
+		request<{slug: string; format: VideoFormat}>('/api/videos', {method: 'POST', body: JSON.stringify({name, format})}),
 	// The project folder goes to the recycle bin.
 	deleteVideo: (slug: string) => request<{ok: boolean}>(slugUrl(slug), {method: 'DELETE'}),
 	// Native folder picker (opened by the backend on this computer); null when cancelled.
@@ -144,11 +161,25 @@ export const api = {
 	// A sound effect for library/sfx; with a moment (theme sfx rule), used for it in every video.
 	uploadSfx: (file: File, rule?: string) => uploadRaw(`/api/library/sfx/${encodeURIComponent(file.name)}${rule ? `?rule=${rule}` : ''}`, file),
 	uploadSubscribe: (file: File) => uploadRaw(`/api/library/brand/subscribe/${encodeURIComponent(file.name)}`, file),
-	// Change the default theme of every video (theme/theme.json).
-	patchTheme: (patch: Record<string, unknown>) => request<unknown>('/api/theme', {method: 'PATCH', body: JSON.stringify(patch)}),
+	// Change the default theme of every video of a format (theme/theme.json, or theme/theme.landscape.json for 16:9).
+	patchTheme: (patch: Record<string, unknown>, format: VideoFormat = 'short') =>
+		request<unknown>(`/api/theme?format=${format}`, {method: 'PATCH', body: JSON.stringify(patch)}),
 	startJob: (slug: string, type: string, params: Record<string, unknown> = {}) =>
 		request<JobInfo>(`/api/videos/${encodeURIComponent(slug)}/jobs/${type}`, {method: 'POST', body: JSON.stringify(params)}),
 	jobs: (slug: string) => request<JobInfo[]>(`/api/jobs?slug=${encodeURIComponent(slug)}`),
+	// YouTube 16:9 style made by Claude from reference pictures (theme/landscape).
+	style: () => request<StyleState>('/api/style'),
+	addStyleRef: async (file: File): Promise<{files: string[]}> => {
+		const res = await fetch(`/api/style/refs/${encodeURIComponent(file.name)}`, {method: 'PUT', body: file});
+		const body = await res.json().catch(() => ({}));
+		if (!res.ok) throw new Error(body.detail ?? res.statusText);
+		return body as {files: string[]};
+	},
+	deleteStyleRef: (name: string) => request<{ok: true}>(`/api/style/refs/${encodeURIComponent(name)}`, {method: 'DELETE'}),
+	setStyleNotes: (notes: {note?: string; refs?: Record<string, string>}) => request<unknown>('/api/style/notes', {method: 'PUT', body: JSON.stringify(notes)}),
+	startStyleJob: (mode: 'create' | 'revise' | 'sheet', feedback = '') =>
+		request<JobInfo>(`/api/style/jobs/${mode}`, {method: 'POST', body: JSON.stringify({feedback})}),
+	restoreStyle: (version: string) => request<{kept: string}>(`/api/style/restore/${encodeURIComponent(version)}`, {method: 'POST'}),
 	job: (id: string) => request<JobInfo>(`/api/jobs/${id}`),
 	cancelJob: (id: string) => request(`/api/jobs/${id}/cancel`, {method: 'POST'}),
 };

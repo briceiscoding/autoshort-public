@@ -160,6 +160,22 @@ export const BrandKitPage: React.FC = () => {
 
 					<section className="card kit-section">
 						<div className="kit-head">
+							<span className="kit-icon"><Icon name="sparkles" size={18} /></span>
+							<h3 className="grow">YouTube 16:9 style</h3>
+						</div>
+						<p className="muted small">
+							Your long format videos have their own style, made by Claude from screenshots of edits you like: fonts, colours, captions, cards and
+							animations. Your shorts keep theirs.
+						</p>
+						<div className="row">
+							<a className="button small primary" href="#/~youtube-style">
+								Open the YouTube style
+							</a>
+						</div>
+					</section>
+
+					<section className="card kit-section">
+						<div className="kit-head">
 							<span className="kit-icon"><Icon name="type" size={18} /></span>
 							<h3 className="grow">Fonts and colours</h3>
 						</div>

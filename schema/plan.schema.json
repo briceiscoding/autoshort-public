@@ -81,6 +81,13 @@
         "fps": {
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "short",
+            "landscape"
+          ]
         }
       },
       "additionalProperties": false

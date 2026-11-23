@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {api, type VideoSummary} from './api';
+import {api, type VideoFormat, type VideoSummary} from './api';
 import {BrandKitPage} from './BrandKit';
 import {ColorModeToggle} from './colorMode';
 import {Editor} from './Editor';
@@ -7,6 +7,13 @@ import {Icon} from './icons';
 import {HomeFooter} from './links';
 import {SettingsPage} from './Settings';
 import {HelpPage} from './Help';
+import {YouTubeStylePage} from './YouTubeStyle';
+
+// The two ways of editing: a vertical short or a YouTube video in long format.
+const FORMAT_CHOICES: {id: VideoFormat; label: string; hint: string}[] = [
+	{id: 'short', label: 'Short 9:16', hint: 'Vertical short, 1080 x 1920.'},
+	{id: 'landscape', label: 'YouTube 16:9', hint: 'YouTube video in long format, 1920 x 1080.'},
+];
 
 const slugFromHash = () => decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
 
@@ -19,6 +26,7 @@ export const App: React.FC = () => {
 	}, []);
 	// "~" never appears in a short's slug: the brand kit page cannot collide with a short.
 	if (slug === '~brand-kit') return <BrandKitPage />;
+	if (slug === '~youtube-style') return <YouTubeStylePage />;
 	if (slug === '~settings') return <SettingsPage />;
 	if (slug === '~help' || slug.startsWith('~help/')) return <HelpPage section={slug.split('/')[1]} />;
 	return slug ? <Editor key={slug} slug={slug} /> : <VideoList />;
@@ -28,6 +36,7 @@ const VideoList: React.FC = () => {
 	const [videos, setVideos] = useState<VideoSummary[] | null>(null);
 	const [error, setError] = useState('');
 	const [name, setName] = useState('');
+	const [format, setFormat] = useState<VideoFormat>('short');
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [deleting, setDeleting] = useState<string | null>(null);
 	const refresh = () => api.videos().then(setVideos).catch((e) => setError(String(e)));
@@ -51,7 +60,7 @@ const VideoList: React.FC = () => {
 		e.preventDefault();
 		setError('');
 		try {
-			const {slug} = await api.createVideo(name);
+			const {slug} = await api.createVideo(name, format);
 			window.location.hash = `#/${encodeURIComponent(slug)}`;
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
@@ -80,15 +89,33 @@ const VideoList: React.FC = () => {
 				<ColorModeToggle />
 			</header>
 			<form className="new-project card" onSubmit={create}>
-				<h3>New short</h3>
+				<h3>New video</h3>
+				<div className="row format-choice" role="radiogroup" aria-label="Format">
+					{FORMAT_CHOICES.map((f) => (
+						<button
+							key={f.id}
+							type="button"
+							role="radio"
+							aria-checked={format === f.id}
+							className={format === f.id ? 'primary' : ''}
+							onClick={() => setFormat(f.id)}
+							title={f.hint}
+						>
+							{f.label}
+						</button>
+					))}
+				</div>
 				<div className="row" style={{flexWrap: 'nowrap'}}>
-					<input className="grow" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name, e.g. My first short" autoFocus />
+					<input className="grow" value={name} onChange={(e) => setName(e.target.value)} placeholder={format === 'landscape' ? 'Name, e.g. My first YouTube video' : 'Name, e.g. My first short'} autoFocus />
 					<button className="primary" disabled={!name.trim()}>
 						<Icon name="plus" />
 						Create
 					</button>
 				</div>
-				<p className="muted small">Then drop the video you filmed and your pictures: the app keeps its own copy of everything.</p>
+				<p className="muted small">
+					{FORMAT_CHOICES.find((f) => f.id === format)!.hint} The format is kept for the whole project. Then drop the video you filmed and your
+					pictures: the app keeps its own copy of everything.
+				</p>
 			</form>
 			{error ? <p className="error">{error}</p> : null}
 			{!videos ? <p>Loading…</p> : null}
@@ -99,6 +126,7 @@ const VideoList: React.FC = () => {
 						<strong>{v.slug}</strong>
 						<span className="muted">{v.rush.join(', ') || 'no video yet'}</span>
 						<span>
+							<em className="tag">{v.format === 'landscape' ? 'YouTube 16:9' : 'Short 9:16'}</em>
 							{v.hasPlan ? <em className="tag ok">edited</em> : <em className="tag warn">to import</em>}
 							{v.hasDraft ? <em className="tag">draft</em> : null}
 							{v.outputs.length ? <em className="tag">{v.outputs.length} exports</em> : null}

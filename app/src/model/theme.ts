@@ -38,7 +38,7 @@ export const TextStyleSchema = z
 			.nullable(),
 		// Quotes drawn around the text: « » (french) or “ ” (english); absent = none.
 		quotes: z.enum(['french', 'english']).optional(),
-		// Centre of the text on the 1080 x 1920 canvas and its maximum width (unused by the highlight and keyword styles).
+		// Centre of the text on the canvas (format width x height) and its maximum width (unused by the highlight and keyword styles).
 		x: z.number(),
 		y: z.number(),
 		maxWidth: z.number().positive(),
@@ -133,6 +133,8 @@ export const ThemeSchema = z
 		screen: z
 			.object({maxWidth: z.number(), maxHeight: z.number(), left: z.number(), centerY: z.number()})
 			.strict(),
+		// Default card of a picture behind the head (bg mode): width and centre. Absent: 900 px wide at 540 x 650.
+		bg: z.object({width: z.number().positive(), centerX: z.number(), centerY: z.number()}).strict().optional(),
 		diagrams: z
 			.object({
 				minS: z.number(),

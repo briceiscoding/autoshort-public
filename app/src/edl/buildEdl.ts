@@ -249,6 +249,7 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 
 	return {
 		slug: plan.slug,
+		format: plan.output?.format ?? 'short',
 		source: plan.source.rush,
 		fps: outputFps(plan, theme),
 		width: theme.format.width,

@@ -5,7 +5,7 @@ import type {Edl} from '../edl/types';
 import {faceAt, type Analysis} from '../model/analysis';
 import type {Plan} from '../model/plan';
 import type {Theme} from '../model/theme';
-import {captionRect, conceptRect, insideRect, logoRect, rectsOverlap, safeRect, screenRect, type Rect} from '../composition/geometry';
+import {captionRect, conceptRect, fullFrameFits, insideRect, logoRect, rectsOverlap, safeRect, screenRect, type Rect} from '../composition/geometry';
 
 export type Severity = 'error' | 'warning' | 'info';
 
@@ -148,11 +148,11 @@ export const lintPlan = (plan: Plan, theme: Theme, analysis: Analysis | null | u
 		const asset = assets.get(c.asset);
 		if (!asset?.width || !asset.height) return;
 		const ratio = asset.width / asset.height;
-		if (c.mode === 'full' && ratio > 0.75)
+		if (c.mode === 'full' && !fullFrameFits(ratio, theme.format))
 			add({
 				rule: 'image-mode',
 				severity: 'warning',
-				message: `"${c.asset}" is ${ratio >= 1 ? 'landscape' : 'square-ish'} (${asset.width}x${asset.height}) in full mode: most of it is cropped, use screen`,
+				message: `"${c.asset}" is ${ratio >= 1 ? 'landscape' : ratio > 0.75 ? 'square-ish' : 'portrait'} (${asset.width}x${asset.height}) in full mode: most of it is cropped, use screen`,
 				time: edl.assets[i].start,
 				ref: {kind: 'cutIn', id: c.id},
 			});

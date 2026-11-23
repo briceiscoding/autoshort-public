@@ -6,6 +6,11 @@ import {FrameStylePatchSchema, TextStylePatchSchema} from './theme';
 
 export const SCHEMA_VERSION = 1;
 
+// Output format of a project: a vertical short or a YouTube long format video (two different ways of editing).
+export const VIDEO_FORMATS = ['short', 'landscape'] as const;
+export const VideoFormat = z.enum(VIDEO_FORMATS);
+export type VideoFormatId = z.infer<typeof VideoFormat>;
+
 const Id = z.string().min(1);
 const Seconds = z.number().min(0);
 
@@ -242,7 +247,7 @@ export const SourceSchema = z
 		height: z.number().int().positive(),
 		fps: z.number().positive(),
 		duration: z.number().positive(),
-		// Window of the source shown on the 9:16 canvas (cover from the full height).
+		// Window of the source shown on the canvas, with the canvas proportions (cover from the crop height).
 		crop: z
 			.object({
 				x: z.number(),
@@ -260,7 +265,9 @@ export const PlanSchema = z
 		slug: z.string().min(1),
 		title: z.string().optional(),
 		source: SourceSchema,
-		output: z.object({fps: z.number().positive().optional()}).strict().optional(),
+		// fps: forced output rate. format: "short" (9:16, 1080x1920, the default when absent) or "landscape" (YouTube
+		// 16:9, 1920x1080), chosen when the project is created: each has its own theme and composition layers.
+		output: z.object({fps: z.number().positive().optional(), format: VideoFormat.optional()}).strict().optional(),
 		assets: z.array(AssetSchema),
 		words: z.array(WordSchema),
 		spans: z.array(SpanSchema).min(1),

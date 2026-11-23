@@ -1,7 +1,7 @@
 """Brand library edits made from the app: fonts (uploaded files or Google Fonts) and the default theme.
 
 Fonts land in library/fonts/ (never overwritten: a name that exists gets a numbered suffix). The theme patch is
-deep-merged into theme/theme.json and validated against schema/theme.schema.json before it is written.
+deep-merged into theme/theme.json (shorts) or theme/theme.landscape.json (YouTube 16:9) and validated against schema/theme.schema.json before it is written.
 """
 import json
 import os
@@ -106,17 +106,31 @@ def _merge(base, patch):
     return patch
 
 
-def patch_theme(patch: dict) -> dict:
-    """Deep-merge a partial theme into theme/theme.json (the default of every video), validated before writing."""
-    theme = _merge(json.loads(THEME_FILE.read_text(encoding="utf-8")), patch)
+def _write_json(path: Path, data: dict) -> None:
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def patch_theme(patch: dict, value: str = "short") -> dict:
+    """Deep-merge a partial theme into the default of every video of a format, validated before writing: theme.json
+    for the shorts; for YouTube 16:9, theme.landscape.json (only what that format changes over theme.json)."""
+    base = json.loads(THEME_FILE.read_text(encoding="utf-8"))
+    if value == "short":
+        theme = _merge(base, patch)
+    else:
+        layer_file = THEME_FILE.with_name(f"theme.{value}.json")
+        layer = _merge(json.loads(layer_file.read_text(encoding="utf-8")) if layer_file.exists() else {}, patch)
+        theme = _merge(base, layer)
     schema = json.loads((SCHEMA_DIR / "theme.schema.json").read_text(encoding="utf-8"))
     errors = [f"{'/'.join(str(p) for p in e.absolute_path)}: {e.message}"
               for e in jsonschema.Draft202012Validator(schema).iter_errors(theme)]
     if errors:
         raise LibraryError("invalid theme: " + "; ".join(errors[:10]))
-    tmp = THEME_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(theme, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(tmp, THEME_FILE)
+    if value == "short":
+        _write_json(THEME_FILE, theme)
+    else:
+        _write_json(layer_file, layer)
     return theme
 
 

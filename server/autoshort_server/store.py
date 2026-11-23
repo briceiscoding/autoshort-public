@@ -16,7 +16,8 @@ from pathlib import Path
 
 import jsonschema
 
-from .config import APP_DIR_NAME, DIAGRAMS_DIR_NAME, EXPORTS_DIR_NAME, SCHEMA_DIR, THEME_FILE, load_config
+from . import formats
+from .config import APP_DIR_NAME, DIAGRAMS_DIR_NAME, EXPORTS_DIR_NAME, SCHEMA_DIR, load_config
 from .media import asset_id, probe_asset
 from .models import Plan
 
@@ -101,6 +102,7 @@ def list_videos() -> list[dict]:
         outputs = sorted(f.name for f in (d / EXPORTS_DIR_NAME).glob("*.mp4")) if (d / EXPORTS_DIR_NAME).is_dir() else []
         out.append({
             "slug": d.name,
+            "format": formats.project_format(d),
             "hasPlan": (d / APP_DIR_NAME / "plan.json").exists(),
             "hasDraft": (d / APP_DIR_NAME / "plan.draft.json").exists(),
             "rush": rush,
@@ -144,20 +146,23 @@ def list_files(folder: Path) -> list[str]:
     return sorted(f.name for f in folder.iterdir() if f.is_file() and not f.name.startswith("._"))
 
 
-def load_theme() -> dict:
-    return json.loads(THEME_FILE.read_text(encoding="utf-8"))
+def load_theme(value: str = formats.SHORT) -> dict:
+    """Default theme of a format (theme.json for the shorts)."""
+    return formats.load_theme(value)
 
 
 def video_state(slug: str) -> dict:
     video = video_dir(slug)
     app = video / APP_DIR_NAME
     cache = app / "cache"
+    value = formats.project_format(video)
     return {
         "slug": slug,
+        "format": value,
         "plan": read_json(app / "plan.json"),
         "draft": read_json(app / "plan.draft.json"),
         "analysis": read_json(app / "analysis.json"),
-        "theme": load_theme(),
+        "theme": load_theme(value),
         "files": {"assets": list_files(video / "assets"), "rush": list_files(video / "rush"),
                   "exports": list_files(video / EXPORTS_DIR_NAME),
                   "diagrams": [f for f in list_files(video / DIAGRAMS_DIR_NAME) if f.endswith(".tsx")]},
@@ -252,7 +257,12 @@ def slugify(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text).strip("-")[:60]
 
 
-def create_project(name: str) -> dict:
+def create_project(name: str, value: str | None = None) -> dict:
+    """A new project folder; `value` is its format ("short", the default, or "landscape" for YouTube 16:9)."""
+    try:
+        value = formats.check_format(value)
+    except formats.FormatError as err:
+        raise StoreError(str(err)) from err
     slug = slugify(name)
     if not slug:
         raise StoreError("give the project a name (letters or digits)")
@@ -263,7 +273,8 @@ def create_project(name: str) -> dict:
         raise StoreError(f"a project named {slug!r} already exists")
     for sub in PROJECT_DIRS:
         (path / sub).mkdir(parents=True)
-    return {"slug": slug}
+    formats.write_project_format(path, value)
+    return {"slug": slug, "format": value}
 
 
 def safe_file_name(name: str) -> str:

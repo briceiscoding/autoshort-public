@@ -10,9 +10,9 @@ import {Sketch} from './diagrams/Sketch';
 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 const CARD_LEFT = 90;
-const CARD_WIDTH = 840;
+export const CARD_WIDTH = 840;
 const CARD_TOP = 330;
-const CARD_HEIGHT = 680;
+export const CARD_HEIGHT = 680;
 const BAR_LEFT = 50;
 const BAR_TOP = 300;
 const BAR_WIDTH = 740;
@@ -27,7 +27,8 @@ const CURSOR_PATH = 'M-20 -130 L20 -130 L20 -52 L54 -52 L0 0 L-54 -52 L-20 -52 Z
 
 const shakeAt = (frame: number): number => Math.sin(Math.floor(frame / SHAKE_FRAMES) * 12.9898) * SHAKE_PX;
 
-export const GaugeLayer: React.FC<{gauge: EdlGauge}> = ({gauge}) => {
+// Top left corner of the card: the short's by default; another format passes its own.
+export const GaugeLayer: React.FC<{gauge: EdlGauge; cardLeft?: number; cardTop?: number}> = ({gauge, cardLeft = CARD_LEFT, cardTop = CARD_TOP}) => {
 	const theme = useTheme();
 	const url = useVideoUrl();
 	const frame = useCurrentFrame();
@@ -36,8 +37,8 @@ export const GaugeLayer: React.FC<{gauge: EdlGauge}> = ({gauge}) => {
 	const enter = interpolate(time, [0, ENTER_S], [0, 1], {...clamp, easing: Easing.out(Easing.cubic)});
 	const position = interpolate(time, [ENTER_S, gauge.landing], [gauge.from, gauge.to], {...clamp, easing: Easing.out(Easing.back(1.6))});
 	const shape = useMemo(() => (g: RoughGenerator, o: Options) => g.path(CURSOR_PATH, o), []);
-	const tipX = CARD_LEFT + BAR_LEFT + position * BAR_WIDTH + shakeAt(frame);
-	const tipY = CARD_TOP + BAR_TOP - CURSOR_GAP + shakeAt(frame + 7) * 0.6;
+	const tipX = cardLeft + BAR_LEFT + position * BAR_WIDTH + shakeAt(frame);
+	const tipY = cardTop + BAR_TOP - CURSOR_GAP + shakeAt(frame + 7) * 0.6;
 	const [x0, y0, x1, y1] = gauge.box;
 	const sx = BAR_WIDTH / (x1 - x0);
 	const sy = BAR_HEIGHT / (y1 - y0);
@@ -47,8 +48,8 @@ export const GaugeLayer: React.FC<{gauge: EdlGauge}> = ({gauge}) => {
 			<div
 				style={{
 					position: 'absolute',
-					left: CARD_LEFT,
-					top: CARD_TOP,
+					left: cardLeft,
+					top: cardTop,
 					width: CARD_WIDTH,
 					height: CARD_HEIGHT,
 					borderRadius: 24,

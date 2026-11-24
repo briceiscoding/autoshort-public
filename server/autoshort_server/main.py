@@ -241,6 +241,16 @@ async def upload_sfx(name: str, request: Request, rule: str | None = None):
         fail(err)
 
 
+@app.delete("/api/library/sfx/{name}")
+def delete_sfx(name: str):
+    """Send a sound of library/sfx to the recycle bin; refused while a moment or a video uses it."""
+    try:
+        brand_library.delete_sfx(name)
+    except brand_library.LibraryError as err:
+        fail(err)
+    return {"deleted": name}
+
+
 @app.put("/api/library/brand/subscribe/{name}")
 async def upload_subscribe_overlay(name: str, request: Request):
     """Replace the subscribe reminder animation (raw body, a video on a green background)."""

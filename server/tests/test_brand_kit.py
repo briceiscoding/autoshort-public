@@ -45,3 +45,24 @@ def test_subscribe_overlay_replaces_keyed_copies(kit):
     assert library.save_subscribe_overlay("abonne.mp4", b"\x00\x00\x00\x18ftyp") == "brand/abonne.mp4"
     assert not cached.exists()
     assert library.brand_kit()["subscribe"] == {"file": "brand/abonne.mp4", "exists": True}
+
+
+def test_delete_sfx_refused_while_used(kit, monkeypatch):
+    trashed = []
+    monkeypatch.setattr("autoshort_server.store.send_to_trash", lambda path, hint="": (trashed.append(path.name), path.unlink()))
+    library.save_sfx("pop.wav", b"RIFF....", "logo")
+    library.save_sfx("free.wav", b"RIFF....")
+    library.save_sfx("placed.wav", b"RIFF....")
+    plan = kit / "projects" / "a-short" / "data" / "plan.json"
+    plan.parent.mkdir(parents=True)
+    plan.write_text(json.dumps({"sfx": [{"id": "s1", "file": "placed.wav", "at": 1}]}), encoding="utf-8")
+    with pytest.raises(library.LibraryError, match="moment logo"):
+        library.delete_sfx("pop.wav")
+    with pytest.raises(library.LibraryError, match="video a-short"):
+        library.delete_sfx("placed.wav")
+    for bad in ("../theme.json", "nothing.wav", "notes.txt"):
+        with pytest.raises(library.LibraryError):
+            library.delete_sfx(bad)
+    library.delete_sfx("free.wav")
+    assert trashed == ["free.wav"]
+    assert "free.wav" not in library.brand_kit()["sfxFiles"]

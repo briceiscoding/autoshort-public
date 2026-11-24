@@ -160,6 +160,8 @@ export const api = {
 	importGoogleFont: (family: string) => request<{files: string[]}>('/api/library/fonts/google', {method: 'POST', body: JSON.stringify({family})}),
 	brandKit: () => request<BrandKit>('/api/library/brand-kit'),
 	// A sound effect for library/sfx; with a moment (theme sfx rule), used for it in every video.
+	// To the recycle bin; refused while a moment or a video uses it (the message says where).
+	deleteSfx: (file: string) => request<{deleted: string}>(`/api/library/sfx/${encodeURIComponent(file)}`, {method: 'DELETE'}),
 	uploadSfx: (file: File, rule?: string) => uploadRaw(`/api/library/sfx/${encodeURIComponent(file.name)}${rule ? `?rule=${rule}` : ''}`, file),
 	uploadSubscribe: (file: File) => uploadRaw(`/api/library/brand/subscribe/${encodeURIComponent(file.name)}`, file),
 	// Change the default theme of every video of a format (theme/theme.json, or theme/theme.landscape.json for 16:9).

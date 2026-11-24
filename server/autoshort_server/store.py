@@ -115,11 +115,17 @@ def list_videos() -> list[dict]:
 def delete_project(slug: str) -> None:
     """Send projects/<slug> to the recycle bin (Windows) or the Trash (macOS), so a mistake can be undone."""
     folder = video_dir(slug)
+    send_to_trash(folder, "close the editor of this short or the video player, then try again")
+
+
+def send_to_trash(folder: Path, hint: str = "close what uses it, then try again") -> None:
+    """Move a folder or a file to the recycle bin (Windows) or the Trash (macOS)."""
     if os.name == "nt":
         # UTF-8 output so a Windows error message reads correctly; one line, without the PowerShell call site.
         script = ("[Console]::OutputEncoding = [Text.Encoding]::UTF8; Add-Type -AssemblyName Microsoft.VisualBasic; "
-                  "try { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($env:AUTOSHORT_TRASH, "
-                  "'OnlyErrorDialogs', 'SendToRecycleBin') } catch { [Console]::Out.WriteLine("
+                  "try { $fs = [Microsoft.VisualBasic.FileIO.FileSystem]; if (Test-Path -LiteralPath $env:AUTOSHORT_TRASH "
+                  "-PathType Container) { $fs::DeleteDirectory($env:AUTOSHORT_TRASH, 'OnlyErrorDialogs', 'SendToRecycleBin') } "
+                  "else { $fs::DeleteFile($env:AUTOSHORT_TRASH, 'OnlyErrorDialogs', 'SendToRecycleBin') } } catch { [Console]::Out.WriteLine("
                   "$_.Exception.InnerException.Message); exit 1 }")
         command = ["powershell", "-NoProfile", "-NonInteractive", "-Command", script]
         env = {**os.environ, "AUTOSHORT_TRASH": str(folder)}
@@ -127,7 +133,7 @@ def delete_project(slug: str) -> None:
         script = 'on run argv\n tell application "Finder" to delete (POSIX file (item 1 of argv) as alias)\nend run'
         command, env = ["osascript", "-e", script, str(folder)], None
     else:
-        raise StoreError("no recycle bin on this system: delete the folder by hand")
+        raise StoreError(f"no recycle bin on this system: delete {folder.name} by hand")
     # A file still being read (the video streamed to a preview that just closed) blocks the move for a moment.
     for attempt in range(4):
         if attempt:
@@ -136,8 +142,8 @@ def delete_project(slug: str) -> None:
         if done.returncode == 0 and not folder.exists():
             return
     detail = (done.stdout or done.stderr).strip().splitlines()
-    raise StoreError(f"could not move {folder.name} to the recycle bin, a file is probably still in use (close the "
-                     f"editor of this short or the video player, then try again). {detail[0][:200] if detail else ''}")
+    raise StoreError(f"could not move {folder.name} to the recycle bin, a file is probably still in use ({hint}). "
+                     f"{detail[0][:200] if detail else ''}")
 
 
 def list_files(folder: Path) -> list[str]:

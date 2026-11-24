@@ -82,7 +82,7 @@ validates every save against that JSON Schema AND the pydantic mirror (`server/a
 | `spans` | partition of the rush: `{start, end, keep, zoom, zoomSfx, reason}`; a cut is `keep: false` (toggle it) |
 | `concepts`, `logos`, `cutIns`, `gauges` | timed events `{id, start, end, ...options}` (size, x/y, shake, dim, mode, trim...) |
 | `diagrams` | `{template, start, end, elements: [{label, icon, image, accent, strike, check, at, draw}]}`; `template: custom` + `component` = escape hatch |
-| `sfx` | manual SFX only, any file of `library/sfx` (added from the Catalog or the Brand kit: `PUT /api/library/sfx/{name}`, no `rule` = not tied to a moment); automatic ones are derived from the theme rules |
+| `sfx` | manual SFX only, any file of `library/sfx` (added from the Catalog or the Brand kit: `PUT /api/library/sfx/{name}`, no `rule` = not tied to a moment; `DELETE` sends it to the recycle bin, refused while a theme moment or a video plan uses it); automatic ones are derived from the theme rules |
 | `music`, `subscribe` | music bed asset + level, subscribe overlay start + placement |
 | `sfxRules`, `themeOverrides` | per video overrides |
 

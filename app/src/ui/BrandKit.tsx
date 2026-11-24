@@ -5,6 +5,7 @@ import {api, type BrandKit} from './api';
 import {ColorModeToggle} from './colorMode';
 import {Icon} from './icons';
 import {FreeLinks, HomeFooter} from './links';
+import {DeleteSound} from './DeleteSound';
 import {listenSfx} from './listen';
 
 const MOMENTS: Record<string, {label: string; hint: string}> = {
@@ -181,7 +182,7 @@ export const BrandKitPage: React.FC = () => {
 						</ul>
 						<h4>All your sounds</h4>
 						<p className="muted small">
-							Every sound of library/sfx, shared by all your videos: in a video, Catalog tab, place any of them at the playhead.
+							Every sound of library/sfx, shared by all your videos: in a video, Catalog tab, place any of them at the playhead. A deleted sound goes to the recycle bin; one still used by a moment or a video must be replaced or removed there first.
 						</p>
 						<ul className="sfx-list">
 							{kit.sfxFiles.map((f) => (
@@ -190,6 +191,18 @@ export const BrandKitPage: React.FC = () => {
 									<button className="icon-btn" title="Listen" aria-label="Listen" onClick={() => listenSfx(f)}>
 										<Icon name="play" />
 									</button>
+									<DeleteSound
+										file={f}
+										onDone={() => {
+											setError('');
+											setDone(`Sound sent to the recycle bin: ${f}`);
+											reload();
+										}}
+										onError={(message) => {
+											setDone('');
+											setError(message);
+										}}
+									/>
 								</li>
 							))}
 						</ul>

@@ -190,6 +190,40 @@ def save_sfx(name: str, data: bytes, rule: str | None = None) -> str:
     return path.name
 
 
+def sfx_usage(name: str) -> list[str]:
+    """Where a sound of library/sfx is used: moments of the shorts / 16:9 themes, videos that place it or set it for a
+    moment (plan sfx, sfxRules, themeOverrides.sfx)."""
+    out = []
+    for label, path in (("shorts", THEME_FILE), ("YouTube 16:9", THEME_FILE.with_name("theme.landscape.json"))):
+        rules = (json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}).get("sfx") or {}
+        out += [f"moment {rule} ({label})" for rule, file in rules.items() if file == name]
+    projects = load_config().projects_root
+    for plan_file in sorted(projects.glob("*/data/plan.json")) if projects.is_dir() else []:
+        try:
+            plan = json.loads(plan_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        rules = {**(((plan.get("themeOverrides") or {}).get("sfx")) or {}), **(plan.get("sfxRules") or {})}
+        if any(s.get("file") == name for s in plan.get("sfx") or []) or name in rules.values():
+            out.append(f"video {plan_file.parent.parent.name}")
+    return out
+
+
+def delete_sfx(name: str) -> None:
+    """Send a sound of library/sfx to the recycle bin; refused while a moment or a video uses it."""
+    from .store import StoreError, send_to_trash
+    path = _library_dir("sfx") / Path(name).name
+    if Path(name).name != name or path.suffix.lower() not in SFX_EXTENSIONS or not path.is_file():
+        raise LibraryError(f"unknown sound {name}")
+    used = sfx_usage(name)
+    if used:
+        raise LibraryError(f"{name} is still used ({', '.join(used)}): replace it or remove it there first")
+    try:
+        send_to_trash(path, "stop listening to it, then try again")
+    except StoreError as err:
+        raise LibraryError(str(err)) from err
+
+
 def save_subscribe_overlay(name: str, data: bytes) -> str:
     """The subscribe reminder animation (green background, keyed at export) for every video."""
     path = _save_media("brand", name, data, OVERLAY_EXTENSIONS)

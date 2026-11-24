@@ -10,6 +10,7 @@ import * as ops from './ops';
 import {FileDrop} from './FileDrop';
 import {Icon, type IconName} from './icons';
 import {FreeLinks} from './links';
+import {DeleteSound} from './DeleteSound';
 import {listenSfx} from './listen';
 import {HelpLink} from './Help';
 
@@ -285,6 +286,15 @@ export const CatalogPanel: React.FC = () => {
 						<button className="small" title="Listen" onClick={() => listenSfx(f)}>▶</button>
 						<span className="grow">{f}</span>
 						<button className="small" onClick={() => editor.apply((p) => ops.addSfx(p, f, outputToRush(segments, at())))}>add</button>
+						{/* The plan in memory may not be saved yet: a sound placed in this video is checked here too. */}
+						{plan.sfx.some((x) => x.file === f) ? null : <DeleteSound
+							file={f}
+							onDone={() => {
+								setSfxError('');
+								reloadSfx();
+							}}
+							onError={setSfxError}
+						/>}
 					</li>
 				))}
 			</ul>

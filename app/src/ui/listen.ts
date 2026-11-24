@@ -1,6 +1,12 @@
 // One sound at a time when listening to the library: a new one stops the previous one, the same one again stops it.
 let current: {src: string; audio: HTMLAudioElement} | null = null;
 
+// Stop the sound being listened to (before deleting it).
+export const stopSfx = (): void => {
+	current?.audio.pause();
+	current = null;
+};
+
 export const listenSfx = (file: string): void => {
 	const src = `/library/sfx/${encodeURIComponent(file)}`;
 	const previous = current;

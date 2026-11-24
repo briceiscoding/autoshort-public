@@ -56,7 +56,7 @@ def test_delete_sfx_refused_while_used(kit, monkeypatch):
     plan = kit / "projects" / "a-short" / "data" / "plan.json"
     plan.parent.mkdir(parents=True)
     plan.write_text(json.dumps({"sfx": [{"id": "s1", "file": "placed.wav", "at": 1}]}), encoding="utf-8")
-    with pytest.raises(library.LibraryError, match="moment logo"):
+    with pytest.raises(library.LibraryError, match="A logo appears"):
         library.delete_sfx("pop.wav")
     with pytest.raises(library.LibraryError, match="video a-short"):
         library.delete_sfx("placed.wav")
@@ -65,4 +65,6 @@ def test_delete_sfx_refused_while_used(kit, monkeypatch):
             library.delete_sfx(bad)
     library.delete_sfx("free.wav")
     assert trashed == ["free.wav"]
+    uses = library.brand_kit()["sfxUses"]
+    assert uses["pop.wav"] == ["A logo appears (shorts)"] and uses["placed.wav"] == ["video a-short"]
     assert "free.wav" not in library.brand_kit()["sfxFiles"]

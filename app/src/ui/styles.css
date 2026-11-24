@@ -376,6 +376,9 @@ code { background: var(--panel2); padding: 0 4px; border-radius: 4px; font-size:
 .sfx-list { list-style: none; padding: 0; margin: 10px 0; display: flex; flex-direction: column; }
 .sfx-list li { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--line); }
 .sfx-list li:last-child { border-bottom: none; }
+/* The answer of a refused delete, on its own line under the sound. */
+.sfx-list li:has(.sound-message), .asset-list li:has(.sound-message) { flex-wrap: wrap; }
+.sound-message { flex-basis: 100%; white-space: normal; }
 .sfx-list li > div { display: flex; flex-direction: column; min-width: 0; }
 .sfx-list li > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

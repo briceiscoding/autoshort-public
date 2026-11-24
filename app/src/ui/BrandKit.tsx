@@ -182,25 +182,25 @@ export const BrandKitPage: React.FC = () => {
 						</ul>
 						<h4>All your sounds</h4>
 						<p className="muted small">
-							Every sound of library/sfx, shared by all your videos: in a video, Catalog tab, place any of them at the playhead. A deleted sound goes to the recycle bin; one still used by a moment or a video must be replaced or removed there first.
+							Every sound of library/sfx, shared by all your videos: in a video, Catalog tab, place any of them at the playhead. A deleted sound goes to the recycle bin; one still used (by a moment above or in a video) cannot be deleted: replace it or remove it there first.
 						</p>
 						<ul className="sfx-list">
 							{kit.sfxFiles.map((f) => (
 								<li key={f}>
-									<span className="grow">{f}</span>
+									<div className="grow">
+										<span>{f}</span>
+										<span className="muted small">{kit.sfxUses[f]?.length ? `Used for: ${kit.sfxUses[f].join(', ')}` : 'Not used'}</span>
+									</div>
 									<button className="icon-btn" title="Listen" aria-label="Listen" onClick={() => listenSfx(f)}>
 										<Icon name="play" />
 									</button>
 									<DeleteSound
 										file={f}
+										usedBy={kit.sfxUses[f]}
 										onDone={() => {
 											setError('');
 											setDone(`Sound sent to the recycle bin: ${f}`);
 											reload();
-										}}
-										onError={(message) => {
-											setDone('');
-											setError(message);
 										}}
 									/>
 								</li>

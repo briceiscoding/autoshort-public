@@ -91,6 +91,8 @@ export type BrandKit = {
 	subscribe: {file: string; exists: boolean};
 	sfx: {rule: string; file: string | null; exists: boolean}[];
 	sfxFiles: string[];
+	// Where each sound is used (moments, videos): it cannot be deleted then.
+	sfxUses: Record<string, string[]>;
 };
 
 const uploadRaw = async (url: string, file: File): Promise<{file: string}> => {

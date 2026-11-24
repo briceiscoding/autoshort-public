@@ -293,7 +293,6 @@ export const CatalogPanel: React.FC = () => {
 								setSfxError('');
 								reloadSfx();
 							}}
-							onError={setSfxError}
 						/>}
 					</li>
 				))}

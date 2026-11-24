@@ -143,6 +143,10 @@ OVERLAY_EXTENSIONS = (".mp4", ".mov", ".webm", ".mkv")
 MAX_MEDIA_BYTES = 200 * 1024 * 1024
 # Moments that play a sound (theme.json -> sfx), in the order shown in the app.
 SFX_RULES = ("cutIn", "logo", "zoom", "conceptTyping", "diagramOpen", "diagramElement", "gauge", "gaugeLanding")
+# Their names in the app (Brand kit), for the messages.
+SFX_LABELS = {"cutIn": "A picture appears", "logo": "A logo appears", "zoom": "Zoom in", "conceptTyping": "Concept word typed",
+              "diagramOpen": "Diagram opens", "diagramElement": "Diagram element drawn", "gauge": "Gauge appears",
+              "gaugeLanding": "Gauge lands"}
 
 
 def _library_dir(sub: str) -> Path:
@@ -177,6 +181,8 @@ def brand_kit() -> dict:
         "sfx": [{"rule": r, "file": sfx.get(r), "exists": bool(sfx.get(r)) and (root / "sfx" / sfx[r]).is_file()}
                 for r in SFX_RULES if r in sfx],
         "sfxFiles": files,
+        # Where each sound is used: such a sound cannot be deleted.
+        "sfxUses": {f: sfx_usage(f) for f in files},
     }
 
 
@@ -196,7 +202,7 @@ def sfx_usage(name: str) -> list[str]:
     out = []
     for label, path in (("shorts", THEME_FILE), ("YouTube 16:9", THEME_FILE.with_name("theme.landscape.json"))):
         rules = (json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}).get("sfx") or {}
-        out += [f"moment {rule} ({label})" for rule, file in rules.items() if file == name]
+        out += [f"{SFX_LABELS.get(rule, rule)} ({label})" for rule, file in rules.items() if file == name]
     projects = load_config().projects_root
     for plan_file in sorted(projects.glob("*/data/plan.json")) if projects.is_dir() else []:
         try:
@@ -217,7 +223,8 @@ def delete_sfx(name: str) -> None:
         raise LibraryError(f"unknown sound {name}")
     used = sfx_usage(name)
     if used:
-        raise LibraryError(f"{name} is still used ({', '.join(used)}): replace it or remove it there first")
+        raise LibraryError(f"{name} is still used: {', '.join(used)}. Replace it there (Brand kit) or remove it from the "
+                           f"video first")
     try:
         send_to_trash(path, "stop listening to it, then try again")
     except StoreError as err:

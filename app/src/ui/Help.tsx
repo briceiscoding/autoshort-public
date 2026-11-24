@@ -270,6 +270,10 @@ export const HELP_SECTIONS: Section[] = [
 						silencieux.
 					</li>
 					<li><B>Ajouter un son à un instant précis</B> : Catalog → SFX, bouton ▶ pour écouter, <B>add</B> pour le poser à la tête de lecture.</li>
+					<li>
+						<B>Ajouter tes propres sons</B> : <B>+ Add sounds</B> dans Catalog → SFX, ou <B>Add sounds</B> dans le Brand kit (wav, mp3, ogg, m4a, flac,
+						plusieurs à la fois). Ils vont dans <code>library/sfx</code> et servent à toutes tes vidéos. Un son écouté coupe le précédent ; ▶ à nouveau l'arrête.
+					</li>
 					<li>Sur la piste SFX, glisse un son bleu pour le déplacer ; sélectionne-le pour régler son volume (Gain) ou le supprimer.</li>
 					<li>Pour enlever le son d'un seul élément : décoche « Sound on entry » (ou « Sounds » pour un schéma) dans son Inspector.</li>
 				</ul>

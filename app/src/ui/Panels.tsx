@@ -10,6 +10,7 @@ import * as ops from './ops';
 import {FileDrop} from './FileDrop';
 import {Icon, type IconName} from './icons';
 import {FreeLinks} from './links';
+import {listenSfx} from './listen';
 import {HelpLink} from './Help';
 
 /* ---------------- checks ---------------- */
@@ -173,10 +174,28 @@ export const TranscriptPanel: React.FC = () => {
 
 /* ---------------- catalog ---------------- */
 
+export const SFX_ACCEPT = '.wav,.mp3,.ogg,.m4a,.flac,audio/*';
+
 export const CatalogPanel: React.FC = () => {
 	const plan = useEditor((s) => s.plan)!;
-	const {segments, sfxFiles, slug, edl} = useDerived();
+	const {segments, sfxFiles, reloadSfx, slug, edl} = useDerived();
 	const [preview, setPreview] = useState<string | null>(null);
+	const [sfxBusy, setSfxBusy] = useState(false);
+	const [sfxError, setSfxError] = useState('');
+	const sfxInput = useRef<HTMLInputElement>(null);
+	// New sounds go to library/sfx (shared by every video); they are then listed here to be placed.
+	const addSounds = async (files: File[]) => {
+		setSfxError('');
+		setSfxBusy(true);
+		try {
+			for (const f of files) await api.uploadSfx(f);
+		} catch (e) {
+			setSfxError(e instanceof Error ? e.message : String(e));
+		} finally {
+			await reloadSfx();
+			setSfxBusy(false);
+		}
+	};
 	const at = () => editor.get().time;
 	const span = (seconds: number) => {
 		const t = at();
@@ -240,11 +259,30 @@ export const CatalogPanel: React.FC = () => {
 					Manage sounds
 				</a>
 			</h4>
-			{sfxFiles.length ? null : <p className="muted small">No sound yet: import yours in the Brand kit.</p>}
+			<div className="row">
+				<button className="small" disabled={sfxBusy} onClick={() => sfxInput.current?.click()}>
+					{sfxBusy ? 'Adding…' : '+ Add sounds'}
+				</button>
+				<span className="muted small">saved in library/sfx, for every video</span>
+				<input
+					ref={sfxInput}
+					type="file"
+					accept={SFX_ACCEPT}
+					multiple
+					hidden
+					onChange={(e) => {
+						const files = [...(e.target.files ?? [])];
+						e.target.value = '';
+						if (files.length) addSounds(files);
+					}}
+				/>
+			</div>
+			{sfxError ? <p className="error small">{sfxError}</p> : null}
+			{sfxFiles.length ? null : <p className="muted small">No sound yet: add yours with + Add sounds.</p>}
 			<ul className="asset-list">
 				{sfxFiles.map((f) => (
 					<li key={f}>
-						<button className="small" title="Listen" onClick={() => new Audio(`/library/sfx/${encodeURIComponent(f)}`).play()}>▶</button>
+						<button className="small" title="Listen" onClick={() => listenSfx(f)}>▶</button>
 						<span className="grow">{f}</span>
 						<button className="small" onClick={() => editor.apply((p) => ops.addSfx(p, f, outputToRush(segments, at())))}>add</button>
 					</li>

@@ -16,6 +16,8 @@ export type Derived = {
 	analysis: Analysis | null;
 	video: VideoState;
 	sfxFiles: string[];
+	// Read library/sfx again (after a sound was added from the Catalog).
+	reloadSfx: () => Promise<void>;
 	reload: () => Promise<void>;
 	// Load the plan from disk, dropping the one in memory and its undo stack (after an import or a reset).
 	reloadPlan: () => Promise<void>;

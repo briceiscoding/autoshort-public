@@ -85,6 +85,10 @@ AutoShort est livré avec un style **neutre** : tous les textes en Montserrat Ex
 importe tes sons et ton animation d'abonnement (page **Brand kit** de l'accueil), puis règle tes polices, couleurs et
 style du mot CTA (onglet **Styles**, « Save as default for all videos »).
 
+Tes sons vont dans `library/sfx` et servent à toutes tes vidéos : **Add sounds** dans le Brand kit, ou **+ Add sounds**
+dans l'onglet Catalog d'une vidéo (plusieurs fichiers à la fois). Le Brand kit choisit le son de chaque moment
+(logo, zoom, schéma…) ; le Catalog pose n'importe quel son à la tête de lecture.
+
 - `library/charte.md` : les règles de montage du style neutre (couleurs, polices, rythme). Adapte-le à ta marque :
   Claude le lit pour proposer chaque montage.
 - `theme/theme.json` : les valeurs utilisées au rendu (aussi modifiables depuis l'onglet Styles).

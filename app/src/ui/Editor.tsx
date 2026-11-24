@@ -70,10 +70,11 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 		}
 	}, [slug]);
 
+	const reloadSfx = useCallback(() => api.sfx().then(setSfxFiles).catch(() => {}), []);
 	useEffect(() => {
 		reload();
-		api.sfx().then(setSfxFiles).catch(() => {});
-	}, [reload, slug]);
+		reloadSfx();
+	}, [reload, reloadSfx, slug]);
 
 	const schemaFiles = video?.files.diagrams.join('|') ?? null;
 	useEffect(() => {
@@ -187,10 +188,11 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 			analysis,
 			video,
 			sfxFiles,
+			reloadSfx,
 			reload: refreshMeta,
 			reloadPlan: reload,
 		};
-	}, [plan, video, slug, sfxFiles, refreshMeta, reload]);
+	}, [plan, video, slug, sfxFiles, reloadSfx, refreshMeta, reload]);
 	edlRef.current = derived?.edl ?? null;
 
 	if (error) return <div className="home"><p className="error">{error}</p><a href="#/">Back</a></div>;

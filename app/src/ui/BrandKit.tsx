@@ -5,6 +5,7 @@ import {api, type BrandKit} from './api';
 import {ColorModeToggle} from './colorMode';
 import {Icon} from './icons';
 import {FreeLinks, HomeFooter} from './links';
+import {listenSfx} from './listen';
 
 const MOMENTS: Record<string, {label: string; hint: string}> = {
 	cutIn: {label: 'A picture appears', hint: 'screen, full and bg pictures'},
@@ -35,6 +36,31 @@ const PickFile: React.FC<{accept: string; label: string; busy: boolean; onPick: 
 					const file = e.target.files?.[0];
 					e.target.value = '';
 					if (file) onPick(file);
+				}}
+			/>
+		</>
+	);
+};
+
+// Several files at once (sounds added to the library without a moment).
+const PickFiles: React.FC<{accept: string; label: string; busy: boolean; onPick: (files: File[]) => void}> = ({accept, label, busy, onPick}) => {
+	const input = useRef<HTMLInputElement>(null);
+	return (
+		<>
+			<button className="small" disabled={busy} onClick={() => input.current?.click()}>
+				<Icon name="upload" size={14} />
+				{busy ? 'Importing…' : label}
+			</button>
+			<input
+				ref={input}
+				type="file"
+				accept={accept}
+				multiple
+				hidden
+				onChange={(e) => {
+					const files = [...(e.target.files ?? [])];
+					e.target.value = '';
+					if (files.length) onPick(files);
 				}}
 			/>
 		</>
@@ -139,7 +165,7 @@ export const BrandKitPage: React.FC = () => {
 										</span>
 									</div>
 									{s.exists && s.file ? (
-										<button className="icon-btn" title="Listen" aria-label="Listen" onClick={() => new Audio(`/library/sfx/${encodeURIComponent(s.file!)}`).play()}>
+										<button className="icon-btn" title="Listen" aria-label="Listen" onClick={() => listenSfx(s.file!)}>
 											<Icon name="play" />
 										</button>
 									) : null}
@@ -153,7 +179,32 @@ export const BrandKitPage: React.FC = () => {
 								</li>
 							))}
 						</ul>
+						<h4>All your sounds</h4>
+						<p className="muted small">
+							Every sound of library/sfx, shared by all your videos: in a video, Catalog tab, place any of them at the playhead.
+						</p>
+						<ul className="sfx-list">
+							{kit.sfxFiles.map((f) => (
+								<li key={f}>
+									<span className="grow">{f}</span>
+									<button className="icon-btn" title="Listen" aria-label="Listen" onClick={() => listenSfx(f)}>
+										<Icon name="play" />
+									</button>
+								</li>
+							))}
+						</ul>
 						<div className="row">
+							<PickFiles
+								accept=".wav,.mp3,.ogg,.m4a,.flac,audio/*"
+								label="Add sounds"
+								busy={busy === 'sfx-add'}
+								onPick={(files) => run('sfx-add', async () => {
+									const added: string[] = [];
+									for (const f of files) added.push((await api.uploadSfx(f)).file);
+									return {file: added.join(', ')};
+								}, files.length > 1 ? 'Sounds added' : 'Sound added')}
+							/>
+							<span className="grow" />
 							<FreeLinks kind="sfx" label="Free sounds" />
 						</div>
 					</section>

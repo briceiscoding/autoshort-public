@@ -7,8 +7,12 @@ import type {Edl, EdlCaptionBlock, EdlCaptionWord, EdlSegment, EdlSfx} from './t
 
 export const cacheFileFor = (assetId: string, process: string): string => `data/cache/${assetId}.${process}.png`;
 
+export const isRough = (plan: Plan): boolean => plan.output?.format === 'rough';
+
+// A rough cut keeps the rush's frame rate and size (even numbers for H.264).
 export const outputFps = (plan: Plan, theme: Theme): number =>
-	plan.output?.fps ?? (theme.format.keepSource60 && plan.source.fps >= 59 ? 60 : theme.format.fps);
+	plan.output?.fps ?? (isRough(plan) ? plan.source.fps : theme.format.keepSource60 && plan.source.fps >= 59 ? 60 : theme.format.fps);
+const even = (n: number): number => Math.max(2, Math.round(n / 2) * 2);
 
 const limitPencilOverlap = (sfx: EdlSfx[], maximum = 2): void => {
 	let active: EdlSfx[] = [];
@@ -247,24 +251,26 @@ export const buildEdl = (plan: Plan, theme: Theme): Edl => {
 			}
 		: null;
 
+	const rough = isRough(plan);
 	return {
 		slug: plan.slug,
 		format: plan.output?.format ?? 'short',
 		source: plan.source.rush,
 		fps: outputFps(plan, theme),
-		width: theme.format.width,
-		height: theme.format.height,
+		width: rough ? even(plan.source.crop.width) : theme.format.width,
+		height: rough ? even(plan.source.crop.height) : theme.format.height,
 		crop: {...plan.source.crop, sourceWidth: plan.source.width},
 		durationBefore: plan.source.duration,
 		durationAfter: round3(total),
 		segments: edlSegments,
-		captions: buildCaptions(plan, segments, theme.captions.minBlockS),
+		// A rough cut is the rush and its cuts only: no captions, no automatic sound effects.
+		captions: rough ? [] : buildCaptions(plan, segments, theme.captions.minBlockS),
 		concepts,
 		logos,
 		assets: cutIns,
 		gauges,
 		diagrams,
-		sfx,
+		sfx: rough ? [] : sfx,
 		overlaySubscribe,
 		music: plan.music ? {file: fileOf(plan.music.asset), underVoiceDb: plan.music.underVoiceDb} : null,
 		hideCaptionsDuringConcepts: plan.hideCaptionsDuringConcepts,

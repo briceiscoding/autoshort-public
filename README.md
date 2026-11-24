@@ -3,6 +3,7 @@
 Éditeur local de vidéos face cam, en short vertical (9:16) ou en vidéo YouTube longue (16:9) : tu déposes ta
 vidéo, l'app écrit les sous-titres, ajoute des zooms, place tes images sur le bon mot, et exporte un MP4 prêt pour
 TikTok, YouTube Shorts et Reels, ou pour YouTube. Tout tourne sur ton ordinateur : ta vidéo ne part sur aucun serveur.
+Il sait aussi juste **pré-monter** une vidéo brute : couper les blancs, rien d'autre, pour la monter ailleurs.
 
 📄 **Pas développeur ?** Suis le [guide de démarrage en PDF](Guide-de-demarrage.pdf) (2 pages) : installation pas à pas
 sur Windows et Mac, premier short, personnalisation et connexion à Claude.
@@ -35,7 +36,7 @@ macOS le demande.
 
 ## Ton premier short
 
-1. **New short** sur l'accueil : choisis **Short 9:16** ou **YouTube 16:9** (le format reste pour tout le projet),
+1. **New short** sur l'accueil : choisis **Short 9:16**, **YouTube 16:9** ou **Rough cut** (voir plus bas ; le format reste pour tout le projet),
    puis dépose ta vidéo et tes images.
    Nomme une image `<mode>__<mot>.png` pour qu'elle apparaisse quand tu prononces ce mot :
    `logo__docker.png`, `screen__dashboard.png`, `full__resultat.jpg`, `bg__serveur.jpg` (derrière ta tête).
@@ -60,6 +61,22 @@ puis **Make the style**. Claude Code lit tes références et écrit le style (il
 L'app vérifie le résultat et rend une planche de contrôle, une image par élément, à comparer avec tes références.
 **Revise the style** pour demander une correction, **Previous versions** pour revenir en arrière. Il faut Claude
 Code (voir « Ce qu'il te faut »). Les shorts n'utilisent jamais ce style.
+
+## Pré-montage (Rough cut)
+
+Pour préparer une vidéo brute que tu monteras ailleurs : **New short → Rough cut**, dépose ta vidéo, puis **Launch the
+video**. Une fenêtre te demande quoi couper :
+
+- les **blancs** sont toujours coupés, ainsi que le début et la fin sans parole ;
+- cases à cocher : couper aussi les **« euh »**, couper aussi les **répétitions** (la dernière prise est gardée) ;
+- **durée minimale d'un blanc** à couper : de 0,2 à 3 s (0,4 s par défaut) ;
+- **marge** gardée avant et après chaque mot : de 0 à 0,5 s (0,08 s par défaut ; plus elle est grande, plus les coupes
+  respirent). Un blanc coupé dure au moins deux marges + 0,1 s.
+
+Rien n'est ajouté : ni sous-titres, ni zooms, ni images, ni sons, et ta vidéo garde sa taille, son cadrage et sa
+qualité. Vérifie les coupes (onglet Transcript, traits rouges sur la timeline, **Restore all cuts**), puis **Export the
+video** : la vidéo coupée sort en quelques secondes, sans rendu (ffmpeg, un très court fondu du son à chaque coupe).
+**Jobs → Cut again from scratch** refait les coupes avec d'autres réglages.
 
 ## Personnaliser
 

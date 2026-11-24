@@ -128,7 +128,16 @@ export const ThemeSchema = z
 			})
 			.strict(),
 		// Import: false = the rush is already edited, nothing is cut (no silence, hesitation or repetition cuts).
-		editing: z.object({autoCuts: z.boolean()}).strict(),
+		// roughCut: options of a rough cut (set per video, see RoughCutOptions).
+		editing: z
+			.object({
+				autoCuts: z.boolean(),
+				roughCut: z
+					.object({hesitations: z.boolean(), repetitions: z.boolean(), margin: z.number(), silence: z.number()})
+					.strict()
+					.optional(),
+			})
+			.strict(),
 		logos: z.object({size: z.number(), centerX: z.number(), centerY: z.number(), popS: z.number()}).strict(),
 		screen: z
 			.object({maxWidth: z.number(), maxHeight: z.number(), left: z.number(), centerY: z.number()})

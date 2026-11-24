@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 from .config import APP, APP_DIR_NAME, SCHEMA_DIR, SERVER, load_config
-from .formats import theme_file
+from .formats import ROUGH, project_format, theme_file
 from .jobs import Step
 from .settings import claude_env
 from .store import read_json, video_dir
@@ -65,17 +65,30 @@ def import_steps(slug: str, params: dict) -> list[Step]:
         Step("Voice bursts fallback (faster-whisper on energy bursts)",
              gpu_py(JOBS_DIR / "gpu_voice_bursts.py", str(rush), str(cache / "bursts.json")),
              skip_if=lambda job: not params.get("bursts") and not _has_gaps(cache), weight=3),
-        Step("Face track", app_py("face_track.py", str(rush), str(cache / "face.json")), weight=1.5),
+        Step("Face track", app_py("face_track.py", str(rush), str(cache / "face.json")), weight=1.5,
+             skip_if=lambda job: is_rough(video)),
         Step("Build plan (cuts, captions, assets)", app_py("initial_plan.py", str(video), str(theme_file(video)), *cut_arg(params)),
              weight=0.5),
-        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))), weight=1),
+        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))), weight=1,
+             skip_if=lambda job: is_rough(video)),
     ]
 
 
+def is_rough(video: Path) -> bool:
+    """A rough cut: the silences are cut and nothing else, so no face track, no preview media, an ffmpeg export."""
+    return project_format(video) == ROUGH
+
+
 def cut_arg(params: dict) -> list[str]:
-    """The rush asked at import / reset: "raw" (cut silences, hesitations, repetitions) or "edited" (cut nothing)."""
+    """The rush asked at import / reset: "raw" (cut silences, hesitations, repetitions) or "edited" (cut nothing); for a
+    rough cut, its options (hesitations, repetitions, margin, silence: checked again by initial_plan.py)."""
     choice = params.get("cuts")
-    return [choice] if choice in ("raw", "edited") else []
+    out = [choice] if choice in ("raw", "edited") else []
+    rough = params.get("rough")
+    if isinstance(rough, dict):
+        keys = ("hesitations", "repetitions", "margin", "silence")
+        out += ["--rough", json.dumps({k: rough[k] for k in keys if k in rough})]
+    return out
 
 
 def reset_steps(slug: str, params: dict) -> list[Step]:
@@ -92,7 +105,8 @@ def reset_steps(slug: str, params: dict) -> list[Step]:
         Step("Probe rush and type assets", app_py("import_probe.py", str(video), str(rush)), weight=0.5),
         Step("Build the default plan (replaces the current one)", app_py("initial_plan.py", str(video), str(theme_file(video)), *cut_arg(params)),
              weight=0.5),
-        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))), weight=1),
+        Step("Prepare preview media", app_py("preview_prep.py", str(video), str(cfg.library_root), str(theme_file(video))), weight=1,
+             skip_if=lambda job: is_rough(video)),
     ]
 
 
@@ -151,6 +165,10 @@ def propose_steps(slug: str, params: dict) -> list[Step]:
 def export_steps(slug: str, params: dict) -> list[Step]:
     cfg = load_config()
     video = video_dir(slug)
+    if is_rough(video):
+        # The rush cut at the kept segments by ffmpeg, in its own size and quality: no render, no audio processing.
+        return [Step("Cut the rush (ffmpeg)", app_py("rough_export.py", str(video)), weight=4),
+                *copy_step(video, {**params, "srt": False})]
     render = video / APP_DIR_NAME / "render"
     render.mkdir(parents=True, exist_ok=True)
     video_base, library_base = base_urls(slug)

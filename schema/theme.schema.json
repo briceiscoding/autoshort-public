@@ -1163,6 +1163,30 @@
       "properties": {
         "autoCuts": {
           "type": "boolean"
+        },
+        "roughCut": {
+          "type": "object",
+          "properties": {
+            "hesitations": {
+              "type": "boolean"
+            },
+            "repetitions": {
+              "type": "boolean"
+            },
+            "margin": {
+              "type": "number"
+            },
+            "silence": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hesitations",
+            "repetitions",
+            "margin",
+            "silence"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

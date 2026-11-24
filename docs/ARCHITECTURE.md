@@ -54,7 +54,7 @@ assets/                       pictures, videos, music, notes.md, copied in, neve
 diagrams/                     optional hand-written diagrams (*.tsx)
 exports/                      <slug>_vN.mp4 + .srt, new versions only, never overwritten
 data/
-├── project.json              format chosen at creation: short (9:16) or landscape (YouTube 16:9)
+├── project.json              format chosen at creation: short (9:16), landscape (YouTube 16:9) or rough (rough cut)
 ├── plan.json                 THE editable source of truth (rush time)
 ├── plan.draft.json           Claude proposal waiting for review (an import or a reset replaces plan.json, its draft and history)
 ├── analysis.json             face track, VAD / burst regions, transcription settings, export loudness
@@ -76,7 +76,7 @@ validates every save against that JSON Schema AND the pydantic mirror (`server/a
 | Field | Content |
 |---|---|
 | `source` | rush path, size, fps, duration, crop window |
-| `output.format` | `landscape` for a YouTube 16:9 video; absent = short 9:16 |
+| `output.format` | `landscape` for a YouTube 16:9 video, `rough` for a rough cut; absent = short 9:16 |
 | `assets` | catalog typed at import: `{id, file, kind: image/video/audio, width, height, duration, alphaBox}` |
 | `words` | every transcribed word, kept or cut: `{id, text, start, end, score, original, blockStart, highlight}` |
 | `spans` | partition of the rush: `{start, end, keep, zoom, zoomSfx, reason}`; a cut is `keep: false` (toggle it) |
@@ -96,7 +96,9 @@ on every edit (sub-millisecond). The export job runs the same TS code through `t
 highlight, concept, logo, screen card, diagram, zoom, audio targets, SFX rules, subscribe defaults, calm rule,
 hesitation and call to action lists. A 16:9 project uses `theme/theme.json` deep-merged with
 `theme/theme.landscape.json` (the result is cached in `data/cache/theme.landscape.json`), then its own
-`themeOverrides`; "Save as default" in the Styles tab writes the file of the project's format.
+`themeOverrides`; "Save as default" in the Styles tab writes the file of the project's format. A rough cut has no
+theme of its own (theme.json for the editor's defaults, no Styles tab): its EDL takes the rush's size (even numbers)
+and frame rate, with no captions and no automatic SFX.
 
 **Analysis** — produced by jobs, read only in the UI: face boxes (source px, every 0.5 s), VAD and burst
 regions, transcription settings, loudness of every export.
@@ -126,6 +128,8 @@ regions, transcription settings, loudness of every export.
 | `propose` | Claude Code headless proposes a plan as data → merged → validated → `plan.draft.json` | app venv + `claude` |
 | `preview` | keyed subscribe overlay (VP9 alpha), luma-key logos, rembg logos (GPU), speaker cutout for `bg` pictures (Robust Video Matting, GPU, only the bg ranges + 0.5 s) — on copies in `data/cache` | app / ai venv |
 | `export` | EDL (TS) → preview media → exact audio (2-pass loudnorm voice, music levelled + sidechain ducking, SFX gains) → Remotion render (H.264 CRF 18 veryfast, yuv420p BT.709, PNG frames, AAC 192k) → limiter → loudness/true peak measure → `exports/<slug>_vN.mp4` + `.srt` → control frames | node + app venv |
+| `import` (rough cut) | probe → WhisperX + VAD → words stretched over a pause clamped to the VAD speech → plan with the silences cut (shortest silence and margin around speech chosen at launch, start / end), plus hesitations / repeated takes if ticked (`themeOverrides.editing.roughCut`), full frame crop, nothing placed; no face track, no preview media | app venv / ai venv (GPU) |
+| `export` (rough cut) | `rough_export.py`: ffmpeg trims the kept segments of the rush and concatenates them (10 ms audio fades), same size and fps, H.264 CRF 16 + AAC 192k → `exports/<slug>_vN.mp4` (no SRT, no control frames) | app venv |
 | `style` | Claude writes the YouTube 16:9 style → fonts imported → theme layer, TypeScript and font checks → control sheet render (up to 2 fixes by Claude, else the previous version comes back) | app venv + `claude` + node |
 
 ## How Claude is invoked

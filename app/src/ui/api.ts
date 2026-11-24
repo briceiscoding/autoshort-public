@@ -2,8 +2,9 @@
 import type {Analysis} from '../model/analysis';
 import type {Asset, Plan} from '../model/plan';
 
-// "short" (9:16) or "landscape" (YouTube 16:9), chosen when the project is created.
-export type VideoFormat = 'short' | 'landscape';
+// "short" (9:16), "landscape" (YouTube 16:9) or "rough" (rough cut: silences cut, nothing added), chosen when the
+// project is created.
+export type VideoFormat = 'short' | 'landscape' | 'rough';
 
 export type VideoSummary = {
 	slug: string;

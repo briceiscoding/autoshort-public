@@ -1,10 +1,13 @@
-"""Output formats: a vertical short (9:16, 1080x1920) or a YouTube long format video (16:9, 1920x1080).
+"""Output formats: a vertical short (9:16, 1080x1920), a YouTube long format video (16:9, 1920x1080), or a rough cut
+(the rush with its silences cut, in its own framing: no captions, no zoom, no picture, no sound added).
 
 They are two ways of editing, not one layout moved around: each format has its own theme (sizes, text placement,
 cards, safe zone, caption rules...) and its own composition layers in the app (app/src/composition/formats).
 
 - The format is chosen when the project is created and kept in projects/<slug>/data/project.json, then copied into
   the plan (plan.output.format) at import. A project without one is a short: projects made before stay identical.
+- A rough cut has no look of its own: it uses theme/theme.json only for the editor's defaults, and is exported by
+  ffmpeg straight from the rush (server/jobs/rough_export.py), at the rush's size.
 - theme/theme.json is the theme of the shorts. theme/theme.landscape.json only holds what the 16:9 format changes
   (deep merged over theme.json), so the brand (colours, fonts, sounds) is shared unless the 16:9 file overrides it.
 """
@@ -15,7 +18,9 @@ from .config import APP_DIR_NAME, THEME_FILE
 
 SHORT = "short"
 LANDSCAPE = "landscape"
-FORMATS = (SHORT, LANDSCAPE)
+ROUGH = "rough"
+FORMATS = (SHORT, LANDSCAPE, ROUGH)
+# Formats with a theme of their own (the Styles tab writes there); a rough cut uses the shorts' theme as it is.
 THEME_FILES = {SHORT: THEME_FILE, LANDSCAPE: THEME_FILE.with_name("theme.landscape.json")}
 PROJECT_FILE = "project.json"
 
@@ -63,20 +68,21 @@ def write_project_format(video: Path, value: str) -> None:
 
 def format_patch(value: str) -> dict:
     """What a format changes over theme.json (empty for the shorts)."""
-    return {} if value == SHORT else _read(THEME_FILES[value])
+    return _read(THEME_FILES[value]) if value in THEME_FILES and value != SHORT else {}
 
 
 def load_theme(value: str = SHORT) -> dict:
     """The default theme of a format (before the per-video overrides of the plan)."""
     base = _read(THEME_FILE)
-    return deep_merge(base, format_patch(value)) if value != SHORT else base
+    patch = format_patch(value)
+    return deep_merge(base, patch) if patch else base
 
 
 def theme_file(video: Path) -> Path:
     """Theme file to hand to the jobs of a project: theme/theme.json for a short (unchanged), else the format's theme
     resolved into the project's cache (rebuilt at every job, the cache is never versioned)."""
     value = project_format(video)
-    if value == SHORT:
+    if value not in THEME_FILES or value == SHORT:
         return THEME_FILE
     target = video / APP_DIR_NAME / "cache" / f"theme.{value}.json"
     target.parent.mkdir(parents=True, exist_ok=True)

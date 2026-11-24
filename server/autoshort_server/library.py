@@ -115,6 +115,8 @@ def _write_json(path: Path, data: dict) -> None:
 def patch_theme(patch: dict, value: str = "short") -> dict:
     """Deep-merge a partial theme into the default of every video of a format, validated before writing: theme.json
     for the shorts; for YouTube 16:9, theme.landscape.json (only what that format changes over theme.json)."""
+    if value == "rough":
+        raise LibraryError("a rough cut has no styles: only its silences are cut")
     base = json.loads(THEME_FILE.read_text(encoding="utf-8"))
     if value == "short":
         theme = _merge(base, patch)

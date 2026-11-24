@@ -38,13 +38,13 @@ def write_json(path: Path, data) -> None:
 
 
 def project_format(video: Path) -> str:
-    """"short" (9:16) or "landscape" (YouTube 16:9): data/project.json, else the plan's output.format, else a short.
+    """"short" (9:16), "landscape" (YouTube 16:9) or "rough" (rough cut): data/project.json, else the plan's output.format, else a short.
     Same rule as autoshort_server.formats.project_format (the jobs run without the server package)."""
     data = video / APP_DIR_NAME
     project = read_json(data / "project.json") or {}
     plan = read_json(data / "plan.json") or {}
     value = project.get("format") or (plan.get("output") or {}).get("format")
-    return value if value in ("short", "landscape") else "short"
+    return value if value in ("short", "landscape", "rough") else "short"
 
 
 def app_dir(video: Path) -> Path:

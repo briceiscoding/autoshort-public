@@ -135,8 +135,9 @@ export type EdlOverlay = {
 
 export type Edl = {
 	slug: string;
-	// "short" (9:16) or "landscape" (YouTube 16:9): picks the composition layers of that format.
-	format?: 'short' | 'landscape';
+	// "short" (9:16) or "landscape" (YouTube 16:9): picks the composition layers of that format. "rough": the rush
+	// alone in its own size (no captions, no sound effects).
+	format?: 'short' | 'landscape' | 'rough';
 	source: string;
 	fps: number;
 	width: number;

@@ -289,6 +289,27 @@ const JOB_INFO: Record<string, {label: string; hint: string; details: string; ic
 		icon: 'media',
 	},
 };
+// What the jobs do on a rough cut.
+const ROUGH_JOB_INFO: Record<string, (typeof JOB_INFO)[string]> = {
+	export: {
+		label: 'Export the video',
+		hint: 'The rush without its cuts, in its own size',
+		details: 'ffmpeg cuts the rush at the kept segments (short audio fades at each cut), same size and frame rate, H.264 + AAC: exports/<name>_vN.mp4 (never overwritten). No render, no captions.',
+		icon: 'download',
+	},
+	reset: {
+		label: 'Cut again from scratch',
+		hint: 'Every silence cut again, your changes lost',
+		details: 'Rebuilds the cuts from the transcription already made, with the options you choose (hesitations, repeated takes, shortest silence, margin around speech). Your restored or added cuts are lost. Exports stay.',
+		icon: 'reset',
+	},
+	import: {
+		label: 'Launch the video',
+		hint: 'Transcription, then the silences are cut (options)',
+		details: 'Probe, WhisperX large-v3 + Silero VAD, then the silences and the start / end without speech are cut, with the hesitations and repeated takes if you choose so. On a video already launched it re-transcribes and replaces the cuts.',
+		icon: 'clapper',
+	},
+};
 const JOB_LABELS: Record<string, string> = Object.fromEntries(Object.entries(JOB_INFO).map(([k, v]) => [k, v.label]));
 
 // Where an export is copied: remembered in this browser (empty = only the project's exports folder).
@@ -309,7 +330,7 @@ const writeSetting = (key: string, value: string) => {
 	}
 };
 
-const ExportTarget: React.FC<{slug: string; value: ExportParams; onChange: (v: ExportParams) => void}> = ({slug, value, onChange}) => {
+const ExportTarget: React.FC<{slug: string; value: ExportParams; onChange: (v: ExportParams) => void; rough?: boolean}> = ({slug, value, onChange, rough}) => {
 	const [picking, setPicking] = useState(false);
 	const [error, setError] = useState('');
 	const set = (patch: Partial<ExportParams>) => {
@@ -343,7 +364,7 @@ const ExportTarget: React.FC<{slug: string; value: ExportParams; onChange: (v: E
 					<span className="small">File name</span>
 					<input className="grow small" value={value.name} placeholder={slug} onChange={(e) => set({name: e.target.value})} />
 					<span className="muted small">.mp4</span>
-					<label className="check small"><input type="checkbox" checked={value.srt} onChange={(e) => set({srt: e.target.checked})} /> .srt too</label>
+					{rough ? null : <label className="check small"><input type="checkbox" checked={value.srt} onChange={(e) => set({srt: e.target.checked})} /> .srt too</label>}
 				</div>
 			) : null}
 			<p className="muted small">
@@ -382,6 +403,50 @@ const CutsDialog: React.FC<{current: boolean | null; replaces: boolean; onChoose
 	</div>
 );
 
+// Options of a rough cut, chosen at launch (same defaults and limits as server/jobs/initial_plan.py).
+export type RoughCutOptions = {hesitations: boolean; repetitions: boolean; margin: number; silence: number};
+export const ROUGH_DEFAULTS: RoughCutOptions = {hesitations: false, repetitions: false, margin: 0.08, silence: 0.4};
+export const ROUGH_LIMITS = {margin: [0, 0.5], silence: [0.2, 3]} as const;
+const clampTo = (value: number, [lo, hi]: readonly [number, number]) => Math.min(Math.max(Number.isFinite(value) ? value : lo, lo), hi);
+export const cleanRoughOptions = (o: RoughCutOptions): RoughCutOptions => {
+	const margin = Math.round(clampTo(o.margin, ROUGH_LIMITS.margin) * 1000) / 1000;
+	return {...o, margin, silence: Math.round(clampTo(Math.max(o.silence, 2 * margin + 0.1), ROUGH_LIMITS.silence) * 1000) / 1000};
+};
+
+const RoughCutDialog: React.FC<{current: RoughCutOptions; replaces: boolean; onChoose: (o: RoughCutOptions) => void; onCancel: () => void}> = ({current, replaces, onChoose, onCancel}) => {
+	const [o, setO] = useState<RoughCutOptions>(current);
+	const clean = cleanRoughOptions(o);
+	return (
+		<div className="modal-backdrop" onClick={onCancel}>
+			<div className="modal card" onClick={(e) => e.stopPropagation()}>
+				<h3>What to cut</h3>
+				{replaces ? <p className="error small">The current cuts of this video are replaced and its history deleted: there is no way back.</p> : null}
+				<p className="small">The silences are always cut, and the start / end without speech. Every cut can be restored afterwards.</p>
+				<label className="check"><input type="checkbox" checked={o.hesitations} onChange={(e) => setO({...o, hesitations: e.target.checked})} /> Also cut the hesitations (euh, hum…)</label>
+				<label className="check"><input type="checkbox" checked={o.repetitions} onChange={(e) => setO({...o, repetitions: e.target.checked})} /> Also cut the repeated takes (the last one is kept)</label>
+				<label className="small">
+					Cut a silence from (seconds, {ROUGH_LIMITS.silence[0]} to {ROUGH_LIMITS.silence[1]})
+					<input type="number" min={ROUGH_LIMITS.silence[0]} max={ROUGH_LIMITS.silence[1]} step={0.05} value={o.silence} onChange={(e) => setO({...o, silence: e.target.valueAsNumber})} />
+				</label>
+				<label className="small">
+					Margin kept around speech at each cut (seconds, {ROUGH_LIMITS.margin[0]} to {ROUGH_LIMITS.margin[1]})
+					<input type="number" min={ROUGH_LIMITS.margin[0]} max={ROUGH_LIMITS.margin[1]} step={0.01} value={o.margin} onChange={(e) => setO({...o, margin: e.target.valueAsNumber})} />
+				</label>
+				<p className="muted small">
+					Will cut silences longer than {clean.silence.toFixed(2)} s, keeping {clean.margin.toFixed(2)} s before and after each word
+					{clean.silence !== o.silence || clean.margin !== o.margin ? ' (adjusted to the limits: a silence cut is at least twice the margin + 0.1 s)' : ''}.
+				</p>
+				<div className="row">
+					<button className="small" onClick={() => setO(ROUGH_DEFAULTS)}>Defaults</button>
+					<span className="grow" />
+					<button className="small" onClick={onCancel}>Cancel</button>
+					<button className="primary" onClick={() => onChoose(clean)}>Cut</button>
+				</div>
+			</div>
+		</div>
+	);
+};
+
 // Jobs read the plan from disk: pending edits are saved first (with a History snapshot).
 export const saveThenStart = async (slug: string, type: string, params: Record<string, unknown> = {}) => {
 	if (editor.get().saveStatus !== 'saved' && editor.get().plan) await api.savePlan(slug, editor.get().plan!, true);
@@ -395,7 +460,9 @@ export const JobsPanel: React.FC<{
 	onFinished?: () => void;
 	// Only list these job types, without the action buttons (a panel that starts its own jobs).
 	listOnly?: string[];
-}> = ({standalone, startType, startParams, onFinished, listOnly}) => {
+	// A rough cut: no Claude proposal, no media to prepare; its own options at launch (RoughCutDialog).
+	rough?: boolean;
+}> = ({standalone, startType, startParams, onFinished, listOnly, rough}) => {
 	const derived = useContext(DerivedContext);
 	const slug = derived?.slug ?? decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
 	const [jobs, setJobs] = useState<JobInfo[]>([]);
@@ -451,16 +518,16 @@ export const JobsPanel: React.FC<{
 		}
 	};
 
-	const types = startType ? [startType] : ['export', 'propose', 'reset', 'import', 'preview'];
+	const types = startType ? [startType] : rough ? ['export', 'reset', 'import'] : ['export', 'propose', 'reset', 'import', 'preview'];
 	const running = jobs.some((j) => j.status === 'running' || j.status === 'queued');
 
 	return (
 		<div className="jobs">
-			{types.includes('export') && !listOnly ? <ExportTarget slug={slug} value={exportParams} onChange={setExportParams} /> : null}
+			{types.includes('export') && !listOnly ? <ExportTarget slug={slug} value={exportParams} onChange={setExportParams} rough={rough} /> : null}
 			{listOnly ? null : (
 			<div className="actions">
 				{types.map((t) => {
-					const info = JOB_INFO[t];
+					const info = (rough && ROUGH_JOB_INFO[t]) || JOB_INFO[t];
 					return (
 						<button
 							key={t}
@@ -483,7 +550,17 @@ export const JobsPanel: React.FC<{
 				})}
 			</div>
 			)}
-			{asking ? (
+			{asking && rough ? (
+				<RoughCutDialog
+					current={{...ROUGH_DEFAULTS, ...((savedCuts as {roughCut?: RoughCutOptions} | undefined)?.roughCut ?? {})}}
+					replaces={Boolean(editor.get().plan)}
+					onCancel={() => setAsking(null)}
+					onChoose={(options) => {
+						start(asking.type, {...asking.params, rough: options});
+						setAsking(null);
+					}}
+				/>
+			) : asking ? (
 				<CutsDialog
 					current={savedCuts?.autoCuts ?? null}
 					replaces={Boolean(editor.get().plan)}

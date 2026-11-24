@@ -7,7 +7,8 @@ import {FrameStylePatchSchema, TextStylePatchSchema} from './theme';
 export const SCHEMA_VERSION = 1;
 
 // Output format of a project: a vertical short or a YouTube long format video (two different ways of editing).
-export const VIDEO_FORMATS = ['short', 'landscape'] as const;
+// short (9:16), landscape (YouTube 16:9) or rough (the rush with its silences cut, in its own framing, nothing added).
+export const VIDEO_FORMATS = ['short', 'landscape', 'rough'] as const;
 export const VideoFormat = z.enum(VIDEO_FORMATS);
 export type VideoFormatId = z.infer<typeof VideoFormat>;
 

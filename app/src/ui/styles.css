@@ -350,6 +350,9 @@ code { background: var(--panel2); padding: 0 4px; border-radius: 4px; font-size:
 .modal h3 { margin: 0; }
 .modal .choice { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; height: auto; text-align: left; padding: 12px 14px; white-space: normal; }
 .modal .choice span { font-weight: 400; }
+/* Checkboxes in a dialog card: box and text on one line (a card label is a column otherwise). */
+.card label.check { flex-direction: row; align-items: center; gap: 8px; margin: 2px 0; }
+.card label.check input { width: auto; flex: none; }
 .subtabs button { height: 28px; border-radius: 999px; font-size: 12.5px; padding: 0 12px; }
 /* the video player keeps its own controls: no app button style inside it */
 .player-frame button { height: auto; max-width: none; padding: 0; background: transparent; border: none; border-radius: 0; box-shadow: none; overflow: visible; }

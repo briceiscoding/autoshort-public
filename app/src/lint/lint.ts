@@ -283,8 +283,11 @@ export const lintPlan = (plan: Plan, theme: Theme, analysis: Analysis | null | u
 			add({rule: 'low-confidence', severity: 'info', message: `Low confidence (${Math.round(w.score * 100)} %): "${w.text}", re-listen`, time: at(w.start), ref: {kind: 'word', id: w.id}});
 	});
 
+	// A rough cut is cut, then edited elsewhere: no duration target, hook or loudness check (its sound is the rush's).
+	const rough = plan.output?.format === 'rough';
+
 	/* ---- duration and hook ---- */
-	if (edl.durationAfter > theme.format.targetDurationS)
+	if (!rough && edl.durationAfter > theme.format.targetDurationS)
 		add({rule: 'duration', severity: 'warning', message: `Output lasts ${edl.durationAfter.toFixed(2)} s, above the ${theme.format.targetDurationS} s target`, time: theme.format.targetDurationS});
 	// Spoken words, captioned or not: a caption deleted from the screen is still heard, it is no pause.
 	const spoken = [...plan.words]
@@ -292,8 +295,8 @@ export const lintPlan = (plan: Plan, theme: Theme, analysis: Analysis | null | u
 		.sort((a, b) => a.start - b.start)
 		.map((w) => ({start: at(w.start), end: at(w.end)}));
 	const firstWord = spoken[0];
-	if (firstWord && firstWord.start > 0.3) add({rule: 'hook', severity: 'warning', message: `First word at ${firstWord.start.toFixed(2)} s: dead time in the hook`, time: 0});
-	const hookWords = spoken.filter((w) => w.start < 2);
+	if (!rough && firstWord && firstWord.start > 0.3) add({rule: 'hook', severity: 'warning', message: `First word at ${firstWord.start.toFixed(2)} s: dead time in the hook`, time: 0});
+	const hookWords = rough ? [] : spoken.filter((w) => w.start < 2);
 	for (let i = 1; i < hookWords.length; i++) {
 		if (hookWords[i].start - hookWords[i - 1].end > 0.4)
 			add({rule: 'hook', severity: 'warning', message: `Pause of ${(hookWords[i].start - hookWords[i - 1].end).toFixed(2)} s in the first 2 s`, time: hookWords[i - 1].end});
@@ -301,7 +304,7 @@ export const lintPlan = (plan: Plan, theme: Theme, analysis: Analysis | null | u
 
 	/* ---- after mix ---- */
 	const last = analysis?.exports?.[analysis.exports.length - 1];
-	if (last) {
+	if (last && !rough) {
 		if (last.truePeakDb > theme.audio.truePeak)
 			add({rule: 'true-peak', severity: 'error', message: `${last.file}: true peak ${last.truePeakDb.toFixed(1)} dBTP > ${theme.audio.truePeak} dBTP`, time: 0});
 		const voice = last.voiceLufs ?? last.integratedLufs;

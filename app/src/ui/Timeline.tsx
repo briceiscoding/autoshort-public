@@ -159,6 +159,8 @@ export const Timeline: React.FC = () => {
 							))}
 						</div>
 					</Row>
+					{/* A rough cut only has segments and cuts. */}
+					{edl.format === 'rough' ? null : (<>
 					<Row label="Captions">
 						<div className="track captions-track" style={{width}} {...scrub}>
 							{edl.captions.map((b) => (
@@ -220,6 +222,7 @@ export const Timeline: React.FC = () => {
 							) : null}
 						</div>
 					</Row>
+					</>)}
 					<div className="playhead" style={{left: LABEL_W + x(time)}}>
 						<div
 							className="playhead-handle"

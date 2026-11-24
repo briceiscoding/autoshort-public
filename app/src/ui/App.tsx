@@ -9,11 +9,13 @@ import {SettingsPage} from './Settings';
 import {HelpPage} from './Help';
 import {YouTubeStylePage} from './YouTubeStyle';
 
-// The two ways of editing: a vertical short or a YouTube video in long format.
+// The ways of editing: a vertical short, a YouTube video in long format, or only a rough cut of the rush.
 const FORMAT_CHOICES: {id: VideoFormat; label: string; hint: string}[] = [
 	{id: 'short', label: 'Short 9:16', hint: 'Vertical short, 1080 x 1920.'},
 	{id: 'landscape', label: 'YouTube 16:9', hint: 'YouTube video in long format, 1920 x 1080.'},
+	{id: 'rough', label: 'Rough cut', hint: 'The silences of your video are cut (hesitations and repeated takes if you want): same framing, no captions, no effects.'},
 ];
+export const FORMAT_LABELS: Record<VideoFormat, string> = {short: 'Short 9:16', landscape: 'YouTube 16:9', rough: 'Rough cut'};
 
 const slugFromHash = () => decodeURIComponent(window.location.hash.replace(/^#\/?/, ''));
 
@@ -106,15 +108,15 @@ const VideoList: React.FC = () => {
 					))}
 				</div>
 				<div className="row" style={{flexWrap: 'nowrap'}}>
-					<input className="grow" value={name} onChange={(e) => setName(e.target.value)} placeholder={format === 'landscape' ? 'Name, e.g. My first YouTube video' : 'Name, e.g. My first short'} autoFocus />
+					<input className="grow" value={name} onChange={(e) => setName(e.target.value)} placeholder={format === 'landscape' ? 'Name, e.g. My first YouTube video' : format === 'rough' ? 'Name, e.g. Interview rough cut' : 'Name, e.g. My first short'} autoFocus />
 					<button className="primary" disabled={!name.trim()}>
 						<Icon name="plus" />
 						Create
 					</button>
 				</div>
 				<p className="muted small">
-					{FORMAT_CHOICES.find((f) => f.id === format)!.hint} The format is kept for the whole project. Then drop the video you filmed and your
-					pictures: the app keeps its own copy of everything.
+					{FORMAT_CHOICES.find((f) => f.id === format)!.hint} The format is kept for the whole project. Then drop the video you filmed
+					{format === 'rough' ? '' : ' and your pictures'}: the app keeps its own copy of everything.
 				</p>
 			</form>
 			{error ? <p className="error">{error}</p> : null}
@@ -126,7 +128,7 @@ const VideoList: React.FC = () => {
 						<strong>{v.slug}</strong>
 						<span className="muted">{v.rush.join(', ') || 'no video yet'}</span>
 						<span>
-							<em className="tag">{v.format === 'landscape' ? 'YouTube 16:9' : 'Short 9:16'}</em>
+							<em className="tag">{FORMAT_LABELS[v.format ?? 'short'] ?? FORMAT_LABELS.short}</em>
 							{v.hasPlan ? <em className="tag ok">edited</em> : <em className="tag warn">to import</em>}
 							{v.hasDraft ? <em className="tag">draft</em> : null}
 							{v.outputs.length ? <em className="tag">{v.outputs.length} exports</em> : null}

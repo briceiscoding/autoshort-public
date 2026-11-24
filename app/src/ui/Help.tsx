@@ -17,7 +17,8 @@ export const HELP_SECTIONS: Section[] = [
 		body: (
 			<>
 				<p>
-					L'accueil liste tes shorts. <B>New short</B> en crée un : donne-lui un nom, puis tu arrives dans sa page. Survole un short et clique sur la
+					L'accueil liste tes shorts. <B>New short</B> en crée un : choisis son format, <B>Short 9:16</B>, <B>YouTube 16:9</B> ou{' '}
+					<B>Rough cut</B> (un <a href="#/~help/pre-montage">pré-montage</a> qui coupe seulement les blancs), donne-lui un nom, puis tu arrives dans sa page. Survole un short et clique sur la
 					corbeille pour le supprimer (il part dans la corbeille de l'ordinateur, tu peux le récupérer).
 				</p>
 				<ul>
@@ -45,6 +46,35 @@ export const HELP_SECTIONS: Section[] = [
 					</li>
 				</ol>
 				<p className="muted">Le champ « Vocabulary hint » aide la transcription à écrire les noms propres et le jargon (Claude, Next.js…).</p>
+			</>
+		),
+	},
+	{
+		id: 'pre-montage',
+		title: 'Pré-montage (Rough cut) : couper les blancs, rien d’autre',
+		body: (
+			<>
+				<p>
+					Le format <B>Rough cut</B> prépare ta vidéo brute pour la monter ailleurs : il coupe les <B>blancs</B> et le début / la fin sans parole, et, si tu
+					le coches, les <B>« euh »</B> et les <B>répétitions</B> (la dernière prise est gardée). Ni sous-titres, ni zooms, ni images, ni sons ; ta vidéo garde
+					sa taille, son cadrage et sa qualité.
+				</p>
+				<ol>
+					<li>Sur l'accueil, <B>New short</B> → <B>Rough cut</B>, puis dépose ta vidéo et <B>Launch the video</B>.</li>
+					<li>
+						Choisis quoi couper : cases <B>hésitations</B> et <B>répétitions</B>, <B>durée minimale d'un blanc</B> à couper (0,2 à 3 s, 0,4 s par défaut) et
+						<B>marge</B> gardée avant et après chaque mot (0 à 0,5 s, 0,08 s par défaut : plus elle est grande, plus les coupes respirent). Un blanc coupé
+						dure au moins deux marges + 0,1 s. Ces choix sont gardés ; <B>Jobs → Cut again from scratch</B> refait les coupes avec d'autres réglages.
+					</li>
+					<li>
+						Vérifie les coupes : un trait rouge sur la timeline ou un mot barré dans <B>Transcript</B> se rétablit d'un clic ; sélectionne un segment pour
+						déplacer ses bords ou le couper. <B>Restore all cuts</B> remet tout.
+					</li>
+					<li>
+						<B>Export the video</B> : la vidéo coupée sort en quelques secondes (sans rendu), en <code>exports/&lt;nom&gt;_vN.mp4</code>, et dans le dossier de
+						ton choix. Un très court fondu du son à chaque coupe évite les clics.
+					</li>
+				</ol>
 			</>
 		),
 	},

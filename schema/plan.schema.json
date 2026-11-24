@@ -86,7 +86,8 @@
           "type": "string",
           "enum": [
             "short",
-            "landscape"
+            "landscape",
+            "rough"
           ]
         }
       },

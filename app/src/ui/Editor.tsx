@@ -208,7 +208,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 					<span className="spacer" />
 					<ColorModeToggle />
 				</header>
-				<p className="muted">Add your assets and your video, then launch it.</p>
+				<p className="muted">{video.format === 'rough' ? 'Rough cut: add your video, then launch it.' : 'Add your assets and your video, then launch it.'}</p>
 				<SetupJobs slug={slug} video={video} onDone={refreshMeta} />
 				<HomeFooter />
 			</div>
@@ -218,7 +218,10 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 
 	const errors = derived.warnings.filter((w) => w.severity === 'error').length;
 	const warns = derived.warnings.filter((w) => w.severity === 'warning').length;
-	const over = derived.edl.durationAfter > derived.theme.format.targetDurationS;
+	const rough = derived.edl.format === 'rough';
+	const over = !rough && derived.edl.durationAfter > derived.theme.format.targetDurationS;
+	// A rough cut only has cuts: no styles, no Claude, no pictures.
+	const tabs: Tab[] = rough ? ['inspector', 'lint', 'transcript', 'jobs', 'history'] : ['inspector', 'styles', 'claude', 'lint', 'transcript', 'catalog', 'jobs', 'history'];
 
 	return (
 		<DerivedContext.Provider value={derived}>
@@ -230,7 +233,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 					</a>
 					<strong className="title" title={slug}>{slug}</strong>
 					<span className={`duration ${over ? 'over' : ''}`} title="Output duration (live)">
-						{derived.edl.durationAfter.toFixed(2)} s <span className="muted">/ {derived.theme.format.targetDurationS} s · rush {plan.source.duration.toFixed(1)} s</span>
+						{derived.edl.durationAfter.toFixed(2)} s <span className="muted">{rough ? '' : `/ ${derived.theme.format.targetDurationS} s · `}rush {plan.source.duration.toFixed(1)} s</span>
 					</span>
 					<button className="icon-btn" disabled={!canUndo} onClick={() => editor.undo()} title="Undo (Ctrl+Z)" aria-label="Undo">
 						<Icon name="undo" />
@@ -259,7 +262,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 					<section className="preview-col">{customReady ? <Preview /> : <div className="muted">Loading diagrams…</div>}</section>
 					<section className="side-col">
 						<nav className="tabs">
-							{(['inspector', 'styles', 'claude', 'lint', 'transcript', 'catalog', 'jobs', 'history'] as Tab[]).map((t) => (
+							{tabs.map((t) => (
 								<button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
 									{t === 'lint' ? `Checks (${derived.warnings.length})` : t[0].toUpperCase() + t.slice(1)}
 								</button>
@@ -272,7 +275,7 @@ export const Editor: React.FC<{slug: string}> = ({slug}) => {
 							{tab === 'lint' ? <LintPanel /> : null}
 							{tab === 'transcript' ? <TranscriptPanel /> : null}
 							{tab === 'catalog' ? <CatalogPanel /> : null}
-							{tab === 'jobs' ? <JobsPanel /> : null}
+							{tab === 'jobs' ? <JobsPanel rough={rough} /> : null}
 							{tab === 'history' ? <HistoryPanel /> : null}
 						</div>
 					</section>
@@ -349,10 +352,11 @@ const DraftBanner: React.FC<{slug: string; video: VideoState; onDone: () => Prom
 const SetupJobs: React.FC<{slug: string; video: VideoState; onDone: () => Promise<void>}> = ({slug, video, onDone}) => {
 	const [prompt, setPrompt] = useState('');
 	const assets = video.files.assets;
+	const rough = video.format === 'rough';
 	return (
 		<div className="setup">
 			<div className="card">
-				<h3>1. Assets</h3>
+				<h3>{rough ? '1. Video' : '1. Assets'}</h3>
 				{video.files.rush.length ? (
 					<p>
 						Video: <strong>{video.files.rush[0]}</strong>
@@ -360,6 +364,7 @@ const SetupJobs: React.FC<{slug: string; video: VideoState; onDone: () => Promis
 				) : (
 					<FileDrop slug={slug} kind="rush" label="Drop the video you filmed" hint="One video per short (mp4, mov, mkv). The app copies it, your original is never touched." onAdded={onDone} />
 				)}
+				{rough ? null : (<>
 				<FileDrop
 					slug={slug}
 					kind="assets"
@@ -373,20 +378,29 @@ const SetupJobs: React.FC<{slug: string; video: VideoState; onDone: () => Promis
 					<FreeLinks kind="broll" label="B-roll" />
 					<FreeLinks kind="music" label="Music" />
 				</div>
+				</>)}
 				<button className="small" onClick={() => api.openFolder(slug)}>Open the project folder</button>
 			</div>
 			<div className="card">
 				<h3>2. Vidéo</h3>
-				<p className="muted small">
-					Probe, WhisperX large-v3 + Silero VAD, burst fallback when speech is skipped, face track, media typing, first plan (caption blocks,
-					assets named mode__trigger, one segment per sentence with alternating zooms). You choose next whether your video is already edited (nothing cut) or raw (cut it).
-				</p>
+				{rough ? (
+					<p className="muted small">
+						Rough cut: WhisperX large-v3 + Silero VAD find the speech, then the silences and the start / end without speech are cut;
+						you choose next whether the hesitations and repeated takes go too, the shortest silence cut and the margin kept around speech.
+						Nothing else: same framing, no captions, no zoom, no sound. Every cut can be restored before the export.
+					</p>
+				) : (
+					<p className="muted small">
+						Probe, WhisperX large-v3 + Silero VAD, burst fallback when speech is skipped, face track, media typing, first plan (caption blocks,
+						assets named mode__trigger, one segment per sentence with alternating zooms). You choose next whether your video is already edited (nothing cut) or raw (cut it).
+					</p>
+				)}
 				<label>
 					Vocabulary hint for Whisper (optional)
 					<input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Claude, Next.js, Supabase…" />
 				</label>
 				{video.files.rush.length ? (
-					<JobsPanel standalone startType="import" startParams={{prompt}} onFinished={onDone} />
+					<JobsPanel standalone startType="import" startParams={{prompt}} onFinished={onDone} rough={rough} />
 				) : (
 					<p className="muted small">Add the video first.</p>
 				)}

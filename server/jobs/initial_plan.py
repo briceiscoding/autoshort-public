@@ -7,13 +7,17 @@
   immediate repetitions (the last take is kept), everything before the first and after the last word.
   Otherwise (the rush is already edited, the default) nothing is cut: the whole rush is kept, split into one segment per
   sentence, every ZOOM_EVERY-th sentence zoomed (punch-in / back to 100 % alternation of the charte).
+- Rough cut format: the silences are cut, plus the hesitations and / or repeated takes when asked (options chosen at
+  launch, kept in plan.themeOverrides.editing.roughCut: margin kept around speech, shortest silence cut); the rush
+  keeps its own framing and nothing is added (no zoom, no picture, no music, no subscribe overlay).
 - Captions: blocks of theme captions.minWords to maxWords words (same rules as the UI auto blocking).
 - The per-video theme overrides of the current plan (styles) are kept.
 - Assets named <mode>__<trigger>[__<option>] are placed on their trigger word; others are listed as unplaced.
 - Subscribe overlay on the first call to action sentence; an audio asset becomes the music bed.
 Writes data/plan.json and REPLACES the current plan (import, re-import or reset start from scratch): the pending draft
 and the history of the previous plan are deleted. Exports are kept.
-Usage: python initial_plan.py <video_dir> <theme_json> [raw|edited]   (no choice: the one of the current plan)
+Usage: python initial_plan.py <video_dir> <theme_json> [raw|edited] [--rough <options json>]
+  (no choice: the one of the current plan; rough cut options: those given, else the current plan's, else the defaults)
 """
 import json
 import re
@@ -26,6 +30,10 @@ from merge_analysis import merge
 
 SILENCE_S = 0.4
 MARGIN_S = 0.08
+# Rough cut options and their limits (the app shows the same ones).
+ROUGH_DEFAULTS = {"hesitations": False, "repetitions": False, "margin": MARGIN_S, "silence": SILENCE_S}
+MARGIN_RANGE = (0.0, 0.5)
+SILENCE_RANGE = (0.2, 3.0)
 ZOOM_EVERY = 3
 MIN_SENTENCE_S = 1.2
 MODES = {"bg", "screen", "logo", "full"}
@@ -102,10 +110,13 @@ def find_repetitions(words: list[dict]) -> list[tuple[int, int]]:
     return cuts
 
 
-def build_spans(words: list[dict], duration: float, hesitations: set[str]) -> list[dict]:
+def build_spans(words: list[dict], duration: float, hesitations: set[str], repetitions: bool = True,
+                margin: float = MARGIN_S, silence: float = SILENCE_S) -> list[dict]:
+    """Kept intervals around the kept words (margin seconds on each side); pauses longer than `silence` between
+    them, removed words, and the start / end without speech are cut."""
     removed: list[tuple[float, float, str]] = []
     keep_words = []
-    rep = {j for a, b in find_repetitions(words) for j in range(a, b + 1)}
+    rep = {j for a, b in find_repetitions(words) for j in range(a, b + 1)} if repetitions else set()
     for i, w in enumerate(words):
         if norm(w["text"]) in hesitations:
             removed.append((w["start"], w["end"], "hesitation"))
@@ -116,8 +127,8 @@ def build_spans(words: list[dict], duration: float, hesitations: set[str]) -> li
     # Kept intervals: each kept word with its margin, merged when the silence between them is short.
     intervals: list[list[float]] = []
     for w in keep_words:
-        start, end = max(0.0, w["start"] - MARGIN_S), min(duration, w["end"] + MARGIN_S)
-        if intervals and start - intervals[-1][1] <= SILENCE_S - 2 * MARGIN_S:
+        start, end = max(0.0, w["start"] - margin), min(duration, w["end"] + margin)
+        if intervals and start - intervals[-1][1] <= silence - 2 * margin:
             intervals[-1][1] = max(intervals[-1][1], end)
         else:
             if intervals and start < intervals[-1][1]:
@@ -159,6 +170,26 @@ def build_spans(words: list[dict], duration: float, hesitations: set[str]) -> li
         s["id"] = f"s{i}"
         s["zoom"] = False
     return spans
+
+
+def clamp_to_speech(words: list[dict], vad: list[dict]) -> int:
+    """Whisper sometimes stretches a word over the pause that follows (or precedes) it, which hides that silence. A word
+    reaching more than SILENCE_S outside the speech region (VAD) it starts in is clamped to that region. Returns how
+    many words were changed."""
+    regions = sorted((r["start"], r["end"]) for r in vad)
+    changed = 0
+    for w in words:
+        region = next(((a, b) for a, b in regions if a - SILENCE_S <= w["start"] <= b), None)
+        if region is None:
+            continue
+        a, b = region
+        if w["end"] > b + SILENCE_S:
+            w["end"] = round(max(w["start"] + 0.05, b), 3)
+            changed += 1
+        if w["start"] < a - 0.05 and w["end"] > a:
+            w["start"] = round(min(a, w["end"] - 0.05), 3)
+            changed += 1
+    return changed
 
 
 def sentence_spans(words: list[dict], duration: float) -> list[dict]:
@@ -286,6 +317,19 @@ def crop_window(w: int, h: int, canvas_w: int, canvas_h: int, face_y: float | No
     return {"x": 0, "y": y, "width": w, "height": crop_h}
 
 
+def rough_options(previous: dict | None, given: dict | None = None) -> dict:
+    """Rough cut options: the given ones, else the current plan's, else the defaults, within their limits. The shortest
+    silence cut is at least the two margins + 0.1 s (a cut must remove something)."""
+    saved = (((previous or {}).get("themeOverrides") or {}).get("editing") or {}).get("roughCut") or {}
+    out = {**ROUGH_DEFAULTS, **{k: v for k, v in saved.items() if k in ROUGH_DEFAULTS},
+           **{k: v for k, v in (given or {}).items() if k in ROUGH_DEFAULTS}}
+    clamp = lambda value, lo, hi: round(min(max(float(value), lo), hi), 3)
+    out["hesitations"], out["repetitions"] = bool(out["hesitations"]), bool(out["repetitions"])
+    out["margin"] = clamp(out["margin"], *MARGIN_RANGE)
+    out["silence"] = clamp(max(float(out["silence"]), 2 * out["margin"] + 0.1), *SILENCE_RANGE)
+    return out
+
+
 def cut_choice(previous: dict | None, theme: dict, choice: str = "") -> bool:
     """Raw rush to cut (True) or already edited (False): the choice given, else the current plan's, else the theme's."""
     if choice in ("raw", "edited"):
@@ -296,9 +340,15 @@ def cut_choice(previous: dict | None, theme: dict, choice: str = "") -> bool:
 
 def main() -> None:
     video, theme_file = Path(sys.argv[1]), Path(sys.argv[2])
+    extra = sys.argv[3:]
+    given = None
+    if "--rough" in extra:
+        i = extra.index("--rough")
+        given = json.loads(extra[i + 1])
+        extra = extra[:i] + extra[i + 2:]
     theme = json.loads(theme_file.read_text(encoding="utf-8"))
     previous = read_json(app_dir(video) / "plan.json")
-    auto_cuts = cut_choice(previous, theme, sys.argv[3] if len(sys.argv) > 3 else "")
+    auto_cuts = cut_choice(previous, theme, extra[0] if extra else "")
     # Next to the theme, else the repo's (a 16:9 theme is resolved into the project's cache).
     vocab_file = theme_file.parent / "vocabulary.json"
     if not vocab_file.exists():
@@ -316,7 +366,17 @@ def main() -> None:
     apply_vocabulary(words, vocab)
     for i, w in enumerate(words):
         w["id"] = f"w{i}"
-    if auto_cuts:
+    video_format = project_format(video)
+    rough = video_format == "rough"
+    if rough:
+        options = rough_options(previous, given)
+        progress(0.3, f"rough cut: {options}")
+        clamped = clamp_to_speech(words, vad)
+        if clamped:
+            print(f"{clamped} word time(s) stretched over a pause, clamped to the speech (VAD)")
+        spans = build_spans(words, probe["duration"], set(theme["hesitations"]) if options["hesitations"] else set(),
+                            repetitions=options["repetitions"], margin=options["margin"], silence=options["silence"])
+    elif auto_cuts:
         progress(0.3, "cuts (raw rush)")
         spans = build_spans(words, probe["duration"], set(theme["hesitations"]))
     else:
@@ -325,16 +385,19 @@ def main() -> None:
     spoken = [w for w in words if kept(spans, w["start"])]
     auto_blocks(spoken, theme["captions"]["maxWords"], theme["captions"]["maxLineChars"])
     progress(0.6, "assets")
-    catalog = read_json(cache / "assets.json") or []
-    canvas_w, canvas_h = theme["format"]["width"], theme["format"]["height"]
-    logos, cut_ins, unplaced, music = place_assets(catalog, words, spans, canvas_w / canvas_h)
-    cta = find_cta(words, spans, theme["callToAction"])
-    sub = theme["subscribe"]
-
-    # Crop: a window of the canvas proportions (9:16 short or 16:9 YouTube video).
+    catalog = [] if rough else read_json(cache / "assets.json") or []
     w, h = probe["width"], probe["height"]
-    crop = crop_window(w, h, canvas_w, canvas_h, face_centre_y(read_json(cache / "face.json")))
-    video_format = project_format(video)
+    if rough:
+        # The rush as it is: its own framing, nothing placed on it.
+        logos, cut_ins, unplaced, music, cta = [], [], [], None, None
+        crop = {"x": 0, "y": 0, "width": w, "height": h}
+    else:
+        canvas_w, canvas_h = theme["format"]["width"], theme["format"]["height"]
+        logos, cut_ins, unplaced, music = place_assets(catalog, words, spans, canvas_w / canvas_h)
+        cta = find_cta(words, spans, theme["callToAction"])
+        # Crop: a window of the canvas proportions (9:16 short or 16:9 YouTube video).
+        crop = crop_window(w, h, canvas_w, canvas_h, face_centre_y(read_json(cache / "face.json")))
+    sub = theme["subscribe"]
     plan = {
         "schemaVersion": 1,
         "slug": video.name,
@@ -354,7 +417,7 @@ def main() -> None:
         "subscribe": {"start": cta["start"], "trigger": cta["id"], "scale": sub["scale"], "x": sub["x"], "y": sub["y"],
                       "keyColor": sub["keyColor"]} if cta else None,
         "hideCaptionsDuringConcepts": True,
-        "themeOverrides": {**((previous or {}).get("themeOverrides") or {}), "editing": {"autoCuts": auto_cuts}},
+        "themeOverrides": {**((previous or {}).get("themeOverrides") or {}), "editing": {"autoCuts": auto_cuts or rough, **({"roughCut": options} if rough else {})}},
         "unplacedAssets": unplaced,
     }
     notes = video / "assets" / "notes.md"

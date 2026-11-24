@@ -93,8 +93,12 @@ export const Preview: React.FC = () => {
 	return (
 		<div className="preview">
 			<div className="preview-toolbar">
-				<label><input type="checkbox" checked={overlays.safeZone} onChange={(e) => editor.set({overlays: {...overlays, safeZone: e.target.checked}})} /> Safe zone</label>
-				<label><input type="checkbox" checked={overlays.face} onChange={(e) => editor.set({overlays: {...overlays, face: e.target.checked}})} /> Face box</label>
+				{edl.format === 'rough' ? null : (
+					<>
+						<label><input type="checkbox" checked={overlays.safeZone} onChange={(e) => editor.set({overlays: {...overlays, safeZone: e.target.checked}})} /> Safe zone</label>
+						<label><input type="checkbox" checked={overlays.face} onChange={(e) => editor.set({overlays: {...overlays, face: e.target.checked}})} /> Face box</label>
+					</>
+				)}
 				<label><input type="checkbox" checked={muted} onChange={(e) => setMuted(e.target.checked)} /> Mute</label>
 				{edl.overlaySubscribe && !video.prepared.subscribe ? <span className="muted small">subscribe overlay not prepared (Jobs → Preview media)</span> : null}
 				<span className="muted small">preview audio is approximate</span>

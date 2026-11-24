@@ -161,10 +161,35 @@ export const Inspector: React.FC = () => {
 	}
 };
 
+// A rough cut: only its cuts to check.
+const RoughOverview: React.FC = () => {
+	const {edl} = useDerived();
+	const plan = useEditor((s) => s.plan)!;
+	const cuts = plan.spans.filter((s) => !s.keep);
+	return (
+		<div className="inspector">
+			<h3>Rough cut <HelpLink to="pre-montage" /></h3>
+			<p className="muted small">
+				The silences (and what you ticked at launch) are cut. Click a red tick on the timeline or a cut word in the Transcript to
+				restore it; select a segment to move its boundaries or cut it. Other options: Jobs → Cut again from scratch.
+			</p>
+			<table className="kv">
+				<tbody>
+					<tr><td>Before / after cuts</td><td>{plan.source.duration.toFixed(2)} s → {edl.durationAfter.toFixed(2)} s</td></tr>
+					<tr><td>Cuts</td><td>{cuts.length} ({cuts.reduce((s, c) => s + c.end - c.start, 0).toFixed(2)} s)</td></tr>
+					<tr><td>Rush</td><td>{plan.source.rush} · {plan.source.width}x{plan.source.height} · {plan.source.fps} fps</td></tr>
+				</tbody>
+			</table>
+			{cuts.length ? <button onClick={() => apply((p) => ops.restoreAllCuts(p))}>Restore all cuts</button> : null}
+		</div>
+	);
+};
+
 const Overview: React.FC = () => {
 	const {edl} = useDerived();
 	const plan = useEditor((s) => s.plan)!;
 	const cuts = plan.spans.filter((s) => !s.keep);
+	if (edl.format === 'rough') return <RoughOverview />;
 	return (
 		<div className="inspector">
 			<h3>Nothing selected <HelpLink to="apercu" /></h3>
@@ -269,15 +294,20 @@ const SpanInspector: React.FC<{id: string}> = ({id}) => {
 	const plan = useEditor((s) => s.plan)!;
 	const span = plan.spans.find((s) => s.id === id);
 	const time = useEditor((s) => s.time);
-	const {segments} = useDerived();
+	const {segments, theme} = useDerived();
 	if (!span) return null;
 	const words = plan.words.filter((w) => w.start >= span.start - 0.03 && w.start < span.end - 0.005);
 	return (
 		<div className="inspector">
 			<h3>Kept segment <HelpLink to="coupes" /> <span className="muted small">rush {span.start.toFixed(2)}-{span.end.toFixed(2)} s</span></h3>
 			<p className="small">{words.map((w) => w.text).join(' ')}</p>
-			<Check label={`Zoom punch-in (x${useDerived().theme.zoom.scale})`} value={span.zoom} onChange={(v) => apply((p) => ops.updateSpan(p, id, {zoom: v}))} />
-			<Check label="Zoom SFX at its start" value={Boolean(span.zoomSfx)} onChange={(v) => apply((p) => ops.updateSpan(p, id, {zoomSfx: v || undefined}))} />
+			{/* A rough cut only has cuts: no zoom, no sound. */}
+			{plan.output?.format === 'rough' ? null : (
+				<>
+					<Check label={`Zoom punch-in (x${theme.zoom.scale})`} value={span.zoom} onChange={(v) => apply((p) => ops.updateSpan(p, id, {zoom: v}))} />
+					<Check label="Zoom SFX at its start" value={Boolean(span.zoomSfx)} onChange={(v) => apply((p) => ops.updateSpan(p, id, {zoomSfx: v || undefined}))} />
+				</>
+			)}
 			<div className="row">
 				<span className="small">Start boundary</span>
 				<button onClick={() => apply((p) => ops.nudgeBoundary(p, span.start, -1))}>◀ word</button>

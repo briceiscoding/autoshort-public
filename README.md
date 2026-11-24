@@ -86,8 +86,8 @@ importe tes sons et ton animation d'abonnement (page **Brand kit** de l'accueil)
 style du mot CTA (onglet **Styles**, « Save as default for all videos »).
 
 Tes sons vont dans `library/sfx` et servent à toutes tes vidéos : **Add sounds** dans le Brand kit, ou **+ Add sounds**
-dans l'onglet Catalog d'une vidéo (plusieurs fichiers à la fois). Le Brand kit choisit le son de chaque moment
-(logo, zoom, schéma…) ; le Catalog pose n'importe quel son à la tête de lecture. La corbeille à côté d'un son l'envoie dans la corbeille de ton
+dans l'onglet Catalog d'une vidéo (plusieurs fichiers à la fois). Dans le Brand kit, chaque moment
+(logo, zoom, schéma…) a une liste de tes sons, avec « No sound » pour le laisser silencieux ; le Catalog pose n'importe quel son à la tête de lecture. La corbeille à côté d'un son l'envoie dans la corbeille de ton
 ordinateur ; c'est refusé tant qu'un moment ou une vidéo l'utilise (le Brand kit indique à quoi sert chaque son).
 
 - `library/charte.md` : les règles de montage du style neutre (couleurs, polices, rythme). Adapte-le à ta marque :

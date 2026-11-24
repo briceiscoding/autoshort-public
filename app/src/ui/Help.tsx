@@ -266,8 +266,8 @@ export const HELP_SECTIONS: Section[] = [
 				<ul>
 					<li>
 						<B>Sons automatiques</B> : un son par moment (image qui apparaît, logo, zoom, mot tapé, schéma…). AutoShort est livré <B>sans aucun son</B> :
-						importe les tiens dans le <a href="#/~brand-kit">Brand kit</a> (des liens vers des sons gratuits y sont donnés). Un moment sans son reste
-						silencieux.
+						ajoute les tiens dans le <a href="#/~brand-kit">Brand kit</a> (Add sounds ; des liens vers des sons gratuits y sont donnés), puis choisis
+						le son de chaque moment dans sa liste. Un moment sans son (« No sound ») reste silencieux.
 					</li>
 					<li><B>Ajouter un son à un instant précis</B> : Catalog → SFX, bouton ▶ pour écouter, <B>add</B> pour le poser à la tête de lecture.</li>
 					<li>

@@ -152,8 +152,8 @@ export const BrandKitPage: React.FC = () => {
 							<Status ok={kit.sfx.every((s) => s.exists)} missingText={kit.sfx.some((s) => s.exists) ? 'Some moments have no sound' : 'No sound yet'} />
 						</div>
 						<p className="muted small">
-							AutoShort ships without sounds: import yours to hear an effect at each moment of the edit (a moment without a sound stays silent). They play
-							under your voice; short sounds (under a second) work best.
+							AutoShort ships without sounds: add yours below (Add sounds), then choose one for each moment of the edit in its list (a moment without a
+							sound stays silent). They play under your voice; short sounds (under a second) work best.
 						</p>
 						<ul className="sfx-list">
 							{kit.sfx.map((s) => (
@@ -170,13 +170,27 @@ export const BrandKitPage: React.FC = () => {
 											<Icon name="play" />
 										</button>
 									) : null}
-									<PickFile
-										accept=".wav,.mp3,.ogg,.m4a,.flac,audio/*"
-										label={s.file ? 'Replace' : 'Import'}
-										primary={!s.exists}
-										busy={busy === s.rule}
-										onPick={(f) => run(s.rule, () => api.uploadSfx(f, s.rule), `${MOMENTS[s.rule]?.label ?? s.rule}`)}
-									/>
+									{/* Chosen among your sounds (All your sounds below, where new ones are added); none = silent. */}
+									<select
+										className={s.file && !s.exists ? 'missing' : ''}
+										aria-label={`Sound for ${MOMENTS[s.rule]?.label ?? s.rule}`}
+										disabled={busy === s.rule}
+										value={s.exists && s.file ? s.file : ''}
+										onChange={(e) => {
+											const file = e.target.value || null;
+											run(s.rule, async () => {
+												await api.patchTheme({sfx: {[s.rule]: file}});
+												return {file: file ?? 'no sound'};
+											}, `${MOMENTS[s.rule]?.label ?? s.rule}`);
+										}}
+									>
+										<option value="">No sound</option>
+										{kit.sfxFiles.map((f) => (
+											<option key={f} value={f}>
+												{f}
+											</option>
+										))}
+									</select>
 								</li>
 							))}
 						</ul>

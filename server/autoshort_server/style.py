@@ -137,7 +137,7 @@ def add_reference(name: str, data: bytes) -> list[str]:
             path = _free(folder, f"{stem}_f{i + 1}", ".jpg")
             done = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{t:.3f}", "-i", str(tmp),
                                    "-frames:v", "1", "-vf", "scale='min(1920,iw)':-2", "-q:v", "3", str(path)],
-                                  capture_output=True, text=True)
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace")
             if done.returncode == 0 and path.exists():
                 added.append(path.name)
         if not added:
@@ -153,7 +153,7 @@ def add_reference(name: str, data: bytes) -> list[str]:
 
 def _duration(clip: Path) -> float:
     done = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(clip)],
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, encoding="utf-8", errors="replace")
     try:
         return max(0.1, float(done.stdout.strip()))
     except ValueError as err:

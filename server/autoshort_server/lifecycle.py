@@ -10,6 +10,7 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import threading
 import time
 
@@ -63,11 +64,13 @@ class Lifecycle:
         if self.stopping:
             return
         self.stopping = True
-        try:
-            self.on_exit()
-            kill_port(load_config().frontend_port)
-        finally:
-            os._exit(0)
+        # Each step runs even when the one before fails: the front end must not outlive the backend.
+        for step in (self.on_exit, lambda: kill_port(load_config().frontend_port)):
+            try:
+                step()
+            except Exception as err:  # noqa: BLE001 - logged, then the next step
+                print(f"stopping: {err!r}", file=sys.stderr, flush=True)
+        os._exit(0)
 
 
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -94,10 +97,13 @@ def kill_tree(pid: int) -> None:
 
 def listening_pids(port: int) -> set[int]:
     if os.name == "nt":
-        out = subprocess.run(["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True,
-                             creationflags=NO_WINDOW).stdout
+        # netstat writes in the console code page (cp850 on a French Windows: "État"): read it leniently, only the
+        # ASCII addresses and PIDs matter.
+        out = subprocess.run(["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, encoding="utf-8",
+                             errors="replace", creationflags=NO_WINDOW).stdout or ""
         return {int(m.group(1)) for m in re.finditer(rf"127\.0\.0\.1:{port}\s+\S+\s+LISTENING\s+(\d+)", out)}
-    out = subprocess.run(["lsof", "-nP", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"], capture_output=True, text=True).stdout
+    out = subprocess.run(["lsof", "-nP", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"], capture_output=True, text=True,
+                         encoding="utf-8", errors="replace").stdout or ""
     return {int(line) for line in out.split() if line.isdigit()}
 
 

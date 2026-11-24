@@ -1,8 +1,8 @@
 # AutoShort
 
-Éditeur local de shorts face cam (9:16) : tu déposes ta vidéo, l'app écrit les sous-titres, ajoute des zooms, place
-tes images sur le bon mot, et exporte un MP4 prêt pour TikTok, YouTube Shorts et Reels. Tout tourne sur ton
-ordinateur : ta vidéo ne part sur aucun serveur.
+Éditeur local de vidéos face cam, en short vertical (9:16) ou en vidéo YouTube longue (16:9) : tu déposes ta
+vidéo, l'app écrit les sous-titres, ajoute des zooms, place tes images sur le bon mot, et exporte un MP4 prêt pour
+TikTok, YouTube Shorts et Reels, ou pour YouTube. Tout tourne sur ton ordinateur : ta vidéo ne part sur aucun serveur.
 
 📄 **Pas développeur ?** Suis le [guide de démarrage en PDF](Guide-de-demarrage.pdf) (2 pages) : installation pas à pas
 sur Windows et Mac, premier short, personnalisation et connexion à Claude.
@@ -35,7 +35,8 @@ macOS le demande.
 
 ## Ton premier short
 
-1. **New short** sur l'accueil, puis dépose ta vidéo et tes images.
+1. **New short** sur l'accueil : choisis **Short 9:16** ou **YouTube 16:9** (le format reste pour tout le projet),
+   puis dépose ta vidéo et tes images.
    Nomme une image `<mode>__<mot>.png` pour qu'elle apparaisse quand tu prononces ce mot :
    `logo__docker.png`, `screen__dashboard.png`, `full__resultat.jpg`, `bg__serveur.jpg` (derrière ta tête).
 2. **Launch the video** : choisis si ta vidéo est déjà montée (rien n'est coupé) ou brute (silences, « euh » et
@@ -48,6 +49,18 @@ macOS le demande.
    logos et rappel d'abonnement ; choisis leur entrée (pop, depuis un bord) dans l'Inspector. Suppr efface la sélection.
 5. **Export the video** : le MP4 et ses sous-titres `.srt`, dans le projet et dans le dossier de ton choix.
 
+## Vidéos YouTube 16:9
+
+Un projet 16:9 se monte de la même façon, avec son propre style : sous-titres, images, schémas et rappel
+d'abonnement sont placés pour un écran horizontal 1920 x 1080 (`theme/theme.landscape.json`).
+
+Tu peux créer ce style à partir de montages que tu aimes : page **Brand kit → Open the YouTube style**, **Add
+pictures or clips** (captures d'écran ; un extrait vidéo donne 6 images), une note sur ce qui te plaît dans chacune,
+puis **Make the style**. Claude Code lit tes références et écrit le style (il ne peut modifier que ces fichiers-là).
+L'app vérifie le résultat et rend une planche de contrôle, une image par élément, à comparer avec tes références.
+**Revise the style** pour demander une correction, **Previous versions** pour revenir en arrière. Il faut Claude
+Code (voir « Ce qu'il te faut »). Les shorts n'utilisent jamais ce style.
+
 ## Personnaliser
 
 AutoShort est livré avec un style **neutre** : tous les textes en Montserrat ExtraBold, en blanc, sans couleur d'accent,
@@ -58,14 +71,17 @@ style du mot CTA (onglet **Styles**, « Save as default for all videos »).
 - `library/charte.md` : les règles de montage du style neutre (couleurs, polices, rythme). Adapte-le à ta marque :
   Claude le lit pour proposer chaque montage.
 - `theme/theme.json` : les valeurs utilisées au rendu (aussi modifiables depuis l'onglet Styles).
+- `theme/theme.landscape.json` et `theme/landscape/` : le style des vidéos YouTube 16:9 (créé depuis la page
+  YouTube style).
 - `library/` : tes polices, tes effets sonores et ton overlay d'abonnement (vides par défaut, sauf Montserrat ExtraBold),
   voir `library/README.md`.
 - `theme/vocabulary.json` : les mots que la transcription écrit mal dans tes vidéos.
 
 ## Confidentialité
 
-L'app ne collecte rien et n'envoie rien. Seule la proposition Claude (optionnelle) envoie la transcription de ta
-vidéo à Claude, via ton propre compte Claude Code.
+L'app ne collecte rien et n'envoie rien. Seules les fonctions Claude (optionnelles) envoient des données à Claude,
+via ton propre compte Claude Code : la transcription de ta vidéo pour la proposition de montage, tes images de
+référence pour le style YouTube.
 
 ## Licences et crédits
 

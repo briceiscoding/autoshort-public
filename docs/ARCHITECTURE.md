@@ -16,6 +16,10 @@ autoshort/
 ├── ai/                         GPU environment: requirements.lock.txt -> ai/.venv (CUDA 12.6), rvm/ (matting model
 │                               code), models/ (weights downloaded once)
 ├── theme/theme.json            visual identity (charte values), applied by default; plan.themeOverrides per short
+├── theme/theme.landscape.json  YouTube 16:9 layer, deep-merged over theme.json for 16:9 projects (1920 x 1080 canvas,
+│                               captions, cards, diagrams and subscribe placed for landscape)
+├── theme/landscape/            YouTube 16:9 style made from references: refs/ (+ refs.json notes), components/*.tsx
+│                               (one file per replaced element), style.md, fonts.json, sheet/ (control sheet), history/
 ├── theme/vocabulary.json       technical vocabulary corrections applied at import
 ├── schema/                     JSON Schema contract, GENERATED from zod (npm run gen:schema)
 ├── fixtures/sample/            test data only: a small neutral plan
@@ -27,15 +31,17 @@ autoshort/
 │   │   ├── Main.tsx            layers in charte order, speaker cutout over bg pictures, audio modes, overlays
 │   │   ├── Captions.tsx, ConceptText.tsx, AssetLayer.tsx, GaugeLayer.tsx
 │   │   ├── geometry.ts         rectangles of on-screen elements (shared with the linter)
+│   │   ├── formats/            layers per format (short, landscape), YouTube style components registry (style.ts)
 │   │   ├── diagrams/           Sketch (rough.js), primitives, icons (sketch set + Lucide), templates
-│   │   ├── kit/                @kit/* imports for hand-written diagrams (escape hatch)
+│   │   ├── kit/                @kit/* imports for hand-written diagrams (escape hatch) and style components (@kit/format)
 │   │   └── custom/             registry of hand-written diagrams
 │   ├── src/ui/                 editor: Preview (Player), Timeline, Inspector, Panels, FileDrop, ops.ts (pure edits)
 │   ├── scripts/                edl-cli.ts, render.ts (Remotion bundler/renderer), gen-schema.ts, ui-smoke.ts
 │   └── tests/                  vitest: EDL, one-line captions, edit ops on the sample plan
 └── server/                     FastAPI backend
     ├── autoshort_server/       main.py (routes), store.py (projects, file intake, history, write guard), jobs.py,
-    │                           pipelines.py (job definitions), models.py (pydantic mirror), media.py (typing)
+    │                           pipelines.py (job definitions), models.py (pydantic mirror), media.py (typing),
+    │                           formats.py (short / landscape, theme per format), style.py (YouTube style files)
     ├── jobs/                   job step scripts (subprocesses); gpu_*.py run in ai/.venv
     └── tests/                  pytest
 ```
@@ -48,6 +54,7 @@ assets/                       pictures, videos, music, notes.md, copied in, neve
 diagrams/                     optional hand-written diagrams (*.tsx)
 exports/                      <slug>_vN.mp4 + .srt, new versions only, never overwritten
 data/
+├── project.json              format chosen at creation: short (9:16) or landscape (YouTube 16:9)
 ├── plan.json                 THE editable source of truth (rush time)
 ├── plan.draft.json           Claude proposal waiting for review (an import or a reset replaces plan.json, its draft and history)
 ├── analysis.json             face track, VAD / burst regions, transcription settings, export loudness
@@ -69,6 +76,7 @@ validates every save against that JSON Schema AND the pydantic mirror (`server/a
 | Field | Content |
 |---|---|
 | `source` | rush path, size, fps, duration, crop window |
+| `output.format` | `landscape` for a YouTube 16:9 video; absent = short 9:16 |
 | `assets` | catalog typed at import: `{id, file, kind: image/video/audio, width, height, duration, alphaBox}` |
 | `words` | every transcribed word, kept or cut: `{id, text, start, end, score, original, blockStart, highlight}` |
 | `spans` | partition of the rush: `{start, end, keep, zoom, zoomSfx, reason}`; a cut is `keep: false` (toggle it) |
@@ -86,7 +94,9 @@ on every edit (sub-millisecond). The export job runs the same TS code through `t
 
 **Theme** — `theme/theme.json` (+ `schema/theme.schema.json`): format, colours, fonts, safe zone, caption,
 highlight, concept, logo, screen card, diagram, zoom, audio targets, SFX rules, subscribe defaults, calm rule,
-hesitation and call to action lists.
+hesitation and call to action lists. A 16:9 project uses `theme/theme.json` deep-merged with
+`theme/theme.landscape.json` (the result is cached in `data/cache/theme.landscape.json`), then its own
+`themeOverrides`; "Save as default" in the Styles tab writes the file of the project's format.
 
 **Analysis** — produced by jobs, read only in the UI: face boxes (source px, every 0.5 s), VAD and burst
 regions, transcription settings, loudness of every export.
@@ -98,6 +108,9 @@ regions, transcription settings, loudness of every export.
 - Projects: `POST /api/videos {name}` creates `projects/<slug>/`; `PUT .../files/<rush|assets>/<name>` streams a
   dropped file in (never overwrites; one rush per short); `POST .../files/<kind>/copy {path}` copies a local file;
   an added asset comes back typed so the editor appends it to the plan catalog; `POST .../open-folder`.
+- Formats: `POST /api/videos {name, format}`; `GET/PATCH /api/theme?format=short|landscape`.
+- YouTube style: `GET /api/style`, `PUT/DELETE /api/style/refs/<name>`, `PUT /api/style/notes`,
+  `POST /api/style/jobs/<create|revise|sheet>`, `POST /api/style/restore/<version>`, files under `/style-files/`.
 - Plans: `GET /api/videos/<slug>` (plan, draft, analysis, theme, files), `PUT .../plan` (validated, atomic write,
   history snapshot), `GET .../history`, `POST .../draft/accept`, `DELETE .../draft`.
 - Jobs: `POST /api/videos/<slug>/jobs/<type>` → `{id}`; the UI polls `GET /api/jobs?slug=` every second
@@ -113,6 +126,7 @@ regions, transcription settings, loudness of every export.
 | `propose` | Claude Code headless proposes a plan as data → merged → validated → `plan.draft.json` | app venv + `claude` |
 | `preview` | keyed subscribe overlay (VP9 alpha), luma-key logos, rembg logos (GPU), speaker cutout for `bg` pictures (Robust Video Matting, GPU, only the bg ranges + 0.5 s) — on copies in `data/cache` | app / ai venv |
 | `export` | EDL (TS) → preview media → exact audio (2-pass loudnorm voice, music levelled + sidechain ducking, SFX gains) → Remotion render (H.264 CRF 18 veryfast, yuv420p BT.709, PNG frames, AAC 192k) → limiter → loudness/true peak measure → `exports/<slug>_vN.mp4` + `.srt` → control frames | node + app venv |
+| `style` | Claude writes the YouTube 16:9 style → fonts imported → theme layer, TypeScript and font checks → control sheet render (up to 2 fixes by Claude, else the previous version comes back) | app venv + `claude` + node |
 
 ## How Claude is invoked
 
@@ -130,6 +144,22 @@ subscribe word). The script merges it into the current plan, validates it agains
 draft; the UI shows a banner to accept or discard it (the previous plan stays in History). If the CLI rejects
 `--json-schema`, the script retries asking for raw JSON and validates it the same way. Claude never writes code
 in this flow; a custom `.tsx` diagram stays a manual escape hatch.
+
+**YouTube 16:9 style** (`server/jobs/style_job.py`, `cwd` = the repo): the only flow where Claude writes code, and
+only the style's files:
+
+```
+claude -p --output-format json --permission-mode dontAsk
+       --allowedTools Read Glob Grep Edit(<style files>) Write(<style files>)
+       --disallowedTools Bash WebFetch WebSearch NotebookEdit
+```
+
+The style files are `theme/theme.landscape.json`, `theme/landscape/components/*.tsx`, `style.md` and `fonts.json`.
+`dontAsk` keeps the user's own default permission mode out of the run, and every other file of the repo is
+fingerprinted before and put back after (Claude is told so). Each component replaces one 16:9 element (captions,
+concept, cut-ins, diagrams, gauge...) and gets the same props as the default one, which it can wrap
+(`@kit/format`). The preview loads them with `import.meta.glob`, the export through a generated
+`formats/style.generated.ts`. Shorts never use them. Every run is snapshotted in `theme/landscape/history/`.
 
 ## Preview vs export
 
